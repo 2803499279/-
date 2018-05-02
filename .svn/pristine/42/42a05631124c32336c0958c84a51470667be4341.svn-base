@@ -1,0 +1,445 @@
+//
+//  YZNewPushViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/5/15.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZNewPushViewController.h"
+#import "YZNewPushOneCell.h"
+#import "YZNewPushTwoViewCell.h"
+#import "YZNewPushThereViewCell.h"
+#import "YZDetailsController.h"
+
+@interface YZNewPushViewController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, retain) NSMutableArray *dataSource;
+@property(nonatomic,strong)UIButton * rightButton;
+
+@property(nonatomic,strong) NSMutableDictionary *OrderDic;
+
+@end
+
+@implementation YZNewPushViewController
+
+- (NSMutableArray *)dataSource {
+    if (!_dataSource) {
+        self.dataSource = [NSMutableArray arrayWithCapacity:0];
+    }
+    return _dataSource;
+}
+
+- (NSMutableDictionary *)OrderDic {
+    if (!_OrderDic) {
+        _OrderDic = [[NSMutableDictionary alloc] init];
+    }
+    return _OrderDic;
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    [self.tableView reloadData];
+    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    self.tabBarController.tabBar.hidden = NO;
+    
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // 设置导航栏
+    [self customPushViewControllerNavBarTitle:@"消息" backGroundImageName:nil];
+    self.view.backgroundColor = BackGround_Color;
+    
+    // 创建列表申请列表
+    [self addUITableView];
+    
+    // 数据请求
+    [self loadData];
+    
+//     [self addNavigationBarRightButton];// 添加右边删除按钮
+    
+    // 右划返回上一个页面
+    [self customerGesturePop];
+    
+    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+    // 根据uid取出数据库中的元素
+    NSArray *OrderArray = [[YZDataBase shareDataBase] selectUidPush:model.uid];
+    
+    NSArray *PsuhArray = [[OrderArray reverseObjectEnumerator] allObjects];
+    
+    self.dataSource  = [NSMutableArray arrayWithArray:PsuhArray];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(PushNotification:) name:@"PushNotification" object:nil];
+}
+
+- (void)loadData {
+    WeakSelf(self);
+    self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        [weakSelf MSG_NOTICERequest:YES];
+        [weakSelf.tableView.mj_header endRefreshing];
+    }];
+    [weakSelf.tableView.mj_header beginRefreshing];
+}
+
+
+//- (UIButton *)rightButton
+//{
+//    if (_rightButton == nil) {
+//        _rightButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//        [_rightButton setFrame:CGRectMake(0, 0, 30*Size_ratio, 30*Size_ratio)];
+//        [_rightButton setBackgroundImage:[UIImage imageNamed:@"Camerdelete-1"] forState:0];
+//        [_rightButton addTarget:self action:@selector(rightBarButtonClick:) forControlEvents:UIControlEventTouchUpInside];
+//    }
+//    return _rightButton;
+//}
+//
+//- (void)addNavigationBarRightButton
+//{
+//    UIBarButtonItem * rightItem = [[UIBarButtonItem alloc]initWithCustomView:self.rightButton];
+//    self.navigationItem.rightBarButtonItem = rightItem;
+//}
+
+#pragma mark - 删除
+// Override to support conditional editing of the table view.
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    // Return NO if you do not want the specified item to be editable.
+    return YES;
+}
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    // 1. 先修改数据源
+    // 删除数据库中的相同数据
+    YZPushModel *PushModel = self.dataSource[indexPath.section];
+    [[YZDataBase shareDataBase] deleteOneMovieByPushID:PushModel.mid];
+    
+    [self.dataSource removeObjectAtIndex:indexPath.section];
+//    [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath]
+//                     withRowAnimation:UITableViewRowAnimationAutomatic];
+//     [weakSelf.tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
+    [tableView deleteSections:[NSIndexSet indexSetWithIndex:indexPath.section] withRowAnimation:UITableViewRowAnimationFade];
+    [self.tableView reloadData];
+}
+
+// 数据源代理方法中, 设置删除按钮标题的代理方法
+- (NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return @"删除";
+}
+//// 删除操作
+//- (void)rightBarButtonClick:(UIButton *)sender {
+//    
+//}
+
+#pragma mark - Private Method 右划返回上一个页面
+- (void)customerGesturePop {
+    UISwipeGestureRecognizer *swipeGestuer2 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleOtherSwipeGesture)];
+    swipeGestuer2.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:swipeGestuer2];
+}
+- (void) handleOtherSwipeGesture {
+    [self.navigationController popViewControllerAnimated:YES];
+}
+
+
+#pragma mark - 创建列表申请列表
+- (void)addUITableView {
+    
+    // 创建UITableView
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, Screen_W, Screen_H-64) style:(UITableViewStyleGrouped)];
+    self.tableView.showsVerticalScrollIndicator = NO;
+    self.tableView.separatorStyle = UITableViewCellSelectionStyleNone;
+    self.tableView.backgroundColor = BackGround_Color;
+    // 注册cell
+    [self.tableView registerClass:[YZNewPushOneCell class] forCellReuseIdentifier:@"YZNewPushOneCell"];
+    [self.tableView registerClass:[YZNewPushTwoViewCell class] forCellReuseIdentifier:@"YZNewPushTwoViewCell"];
+    [self.tableView registerClass:[YZNewPushThereViewCell class] forCellReuseIdentifier:@"YZNewPushThereViewCell"];
+    //    self.tableView.bounces = NO;
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    
+    [self.view addSubview:self.tableView];
+}
+
+
+#pragma mark - UITableViewDataSource代理方法
+// 返回tabelView中section(分区)的个数
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    
+    return self.dataSource.count;
+}
+// 返回每个分区中cell的个数
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return 1;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    if (self.dataSource.count != 0) {
+        
+        YZPushModel *PushModel = self.dataSource[indexPath.section];
+        
+        if (PushModel.pic.length == 0 && PushModel.link.length == 0) {
+            YZNewPushOneCell *PushOneCell = [tableView dequeueReusableCellWithIdentifier:@"YZNewPushOneCell" forIndexPath:indexPath];
+            PushOneCell.selectionStyle = UITableViewCellSelectionStyleNone;
+            PushOneCell.backgroundColor = WhiteColor;
+            [PushOneCell setValueForSubViewsByYZPush:PushModel];
+            return PushOneCell;
+        }else if (PushModel.pic.length == 0 && PushModel.link.length != 0) {
+            YZNewPushTwoViewCell *PushTwoCell = [tableView dequeueReusableCellWithIdentifier:@"YZNewPushTwoViewCell" forIndexPath:indexPath];
+//            PushTwoCell.selectionStyle = UITableViewCellSelectionStyleNone;
+            [PushTwoCell setValueForSubViewsByYZPush:PushModel];
+            PushTwoCell.backgroundColor = WhiteColor;
+            [PushTwoCell.BackGroundView addTarget:self action:@selector(handleTwoTapGesture:) forControlEvents:UIControlEventTouchUpInside];
+            
+//            UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTwoTapGesture:)];
+//            tapGesture.numberOfTapsRequired = 1;
+//            tapGesture.numberOfTouchesRequired = 1;
+//            [PushTwoCell.BackGroundView addGestureRecognizer:tapGesture];
+            
+            return PushTwoCell;
+        }else if (PushModel.pic.length != 0 && PushModel.link.length != 0) {
+            YZNewPushThereViewCell *PushThereCell = [tableView dequeueReusableCellWithIdentifier:@"YZNewPushThereViewCell" forIndexPath:indexPath];
+            PushThereCell.backgroundColor = WhiteColor;
+//            PushThereCell.selectionStyle = UITableViewCellSelectionStyleNone;
+            [PushThereCell setValueForSubViewsByYZPush:PushModel];
+            
+            [PushThereCell.BackGroundView addTarget:self action:@selector(handleThereTapGesture:) forControlEvents:UIControlEventTouchUpInside];
+            
+//            UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleThereTapGesture:)];
+//            tapGesture.numberOfTapsRequired = 1;
+//            tapGesture.numberOfTouchesRequired = 1;
+//            [PushThereCell.BackGroundView addGestureRecognizer:tapGesture];
+            
+            return PushThereCell;
+        }
+    }
+    return nil;
+}
+
+// cell的点击事件
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    YZPushModel *PushModel = self.dataSource[indexPath.section];
+    
+    if (PushModel.pic.length == 0 && PushModel.link.length == 0) {
+        
+    }else if (PushModel.pic.length == 0 && PushModel.link.length != 0) {
+        
+        LKWaitBubble(@"跳转中...");
+        YZDetailsController *YZDetController = [[YZDetailsController alloc]init];
+        YZDetController.urlStr = PushModel.link;
+        [self.navigationController pushViewController:YZDetController animated:YES];
+    }else if (PushModel.pic.length != 0 && PushModel.link.length != 0) {
+        
+        LKWaitBubble(@"跳转中...");
+        YZDetailsController *YZDetController = [[YZDetailsController alloc]init];
+        YZDetController.urlStr = PushModel.link;
+        [self.navigationController pushViewController:YZDetController animated:YES];
+    }
+    
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section{
+    return  20*YZAdapter;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section{
+    return 0.01;
+}
+
+//添加标脚中的内容
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
+    static NSString *footSectionID = @"footSection";
+    UITableViewHeaderFooterView *footerView = [tableView dequeueReusableHeaderFooterViewWithIdentifier:footSectionID];
+    footerView.backgroundColor = Red_Color;
+    footerView = [[UITableViewHeaderFooterView alloc] initWithReuseIdentifier:footSectionID];
+    return footerView;
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    static NSString *HeaderSectionID = @"HeaderSection";
+    UITableViewHeaderFooterView *HeaderView = [tableView dequeueReusableHeaderFooterViewWithIdentifier:HeaderSectionID];
+    HeaderView.backgroundColor = Red_Color;
+    HeaderView = [[UITableViewHeaderFooterView alloc] initWithReuseIdentifier:HeaderSectionID];
+    return HeaderView;
+}
+
+
+
+// 去掉cell左侧空白
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
+        [cell setSeparatorInset:UIEdgeInsetsZero];
+    }
+    if ([cell respondsToSelector:@selector(setLayoutMargins:)]) {
+        [cell setLayoutMargins:UIEdgeInsetsZero];
+    }
+}
+
+// 返回cell的高度
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    YZPushModel *PushModel = self.dataSource[indexPath.section];
+    
+    if (PushModel.pic.length == 0 && PushModel.link.length == 0) {
+        return [YZNewPushOneCell PushCellHeightByYZPushIntroduce:PushModel];
+    }else if (PushModel.pic.length == 0 && PushModel.link.length != 0) {
+
+        return [YZNewPushTwoViewCell PushCellHeightByYZPushIntroduce:PushModel];
+    }else if (PushModel.pic.length != 0 && PushModel.link.length != 0) {
+        return [YZNewPushThereViewCell PushCellHeightByYZPushIntroduce:PushModel];
+    }
+    return 0;
+}
+
+// 设置表头高度
+//- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+//{
+//    return 10*YZAdapter;
+//}
+
+// 查看详情
+- (void)handleTwoTapGesture:(UIButton *)sender {
+    
+    YZNewPushTwoViewCell *YZNewPushTwoCell = (YZNewPushTwoViewCell *)sender.superview.superview;
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:YZNewPushTwoCell];
+    YZPushModel *model = self.dataSource[indexPath.section];
+    LKWaitBubble(@"跳转中...");
+    YZDetailsController *YZDetController = [[YZDetailsController alloc]init];
+    YZDetController.urlStr = model.link;
+    [self.navigationController pushViewController:YZDetController animated:YES];
+}
+
+// 查看详情
+- (void)handleThereTapGesture:(UIButton *)sender {
+    YZNewPushThereViewCell *YZNewPushThereCell = (YZNewPushThereViewCell *)sender.superview.superview;
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:YZNewPushThereCell];
+    YZPushModel *model = self.dataSource[indexPath.section];
+    LKWaitBubble(@"跳转中...");
+    YZDetailsController *YZDetController = [[YZDetailsController alloc]init];
+    YZDetController.urlStr = model.link;
+    [self.navigationController pushViewController:YZDetController animated:YES];
+}
+
+#pragma mark - 接受推送通知的传值
+- (void)PushNotification:(NSNotification *)Order{
+    DLog(@"－－－－－接收到新消息------");
+    
+    // 在新消息通知列表把收到消息的值设置为0
+    NSDictionary *RedDic= [NSDictionary dictionaryWithObjectsAndKeys:@"0", @"Red", nil];;
+    // 创建要写入字典的对象
+    NSString *dicPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"Red.txt"];
+    // 写入
+    BOOL isSuccess = [RedDic writeToFile:dicPath atomically:YES];
+    DLog(@"%@", isSuccess ? @"写入成功" : @"写入失败");
+    
+    [self.dataSource removeAllObjects];
+    
+    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+    // 根据uid取出数据库中的元素
+    NSArray *OrderArray = [[YZDataBase shareDataBase] selectUidPush:model.uid];
+    NSArray *PsuhArray = [[OrderArray reverseObjectEnumerator] allObjects];
+    self.dataSource  = [NSMutableArray arrayWithArray:PsuhArray];
+    
+    [self.tableView reloadData];
+}
+
+#pragma mark - 数据请求新消息通知
+- (void)MSG_NOTICERequest:(BOOL)isRefresh {
+    
+    YZALLService *WALLET_LOGRequest = [YZALLService zwb_requestWithUrl:MSG_NOTICE isPost:YES];
+    
+    WeakSelf(self);
+    [WALLET_LOGRequest zwb_sendRequestWithCompletion:^(id responseObject, BOOL success, NSString *message) {
+        DLog(@"%@", message);
+        if (success) {
+            DLog(@"return sruccess--------------:%@", responseObject);
+            NSString * code = responseObject[@"code"];
+            if ([code integerValue] == 0) {
+                NSArray *ListArray = responseObject[@"data"];
+                
+                NSArray *PArray = [[ListArray reverseObjectEnumerator] allObjects];
+                for (NSDictionary *listDict in PArray) {
+                    if ([listDict allKeys].count != 0) {
+                        YZPushModel *PushModel = [YZPushModel modelWithDictionary:listDict];
+                        [weakSelf.dataSource addObject:PushModel];
+                        
+                        // 删除数据库中的相同数据
+                        [[YZDataBase shareDataBase] deleteOneMovieByPushID:PushModel.mid];
+                        // 插入数据库
+                        [[YZDataBase shareDataBase] insertPush:PushModel];
+                    }
+                }
+                
+                // 如果数据等于十条重新进行数据请求
+                if (ListArray.count == 10) {
+                    [weakSelf MSG_NOTICERequest:YES];
+                }
+                
+                [self.dataSource removeAllObjects];
+                YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+                NSArray *OrderArray = [[YZDataBase shareDataBase] selectUidPush:model.uid];
+                NSArray *PsuhArray = [[OrderArray reverseObjectEnumerator] allObjects];
+                self.dataSource = [NSMutableArray arrayWithArray:PsuhArray];
+                
+                [weakSelf.tableView reloadData];
+                
+            }else if ([code integerValue] == 900102) {
+                [MBProgressHUD showAutoMessage:@"登录信息失效"];
+                
+                YZLoginViewController * vc = [[YZLoginViewController alloc]init];
+                YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+                vc.AlertPhone = model.Usre_Phone;
+                
+                [[YZUserInfoManager sharedManager] didLoginOut];
+                [self.navigationController pushViewController:vc animated:YES];
+            }
+        } else {
+            DLog(@"return failure");
+            [MBProgressHUD showAutoMessage:@"请求失败, 请检查您的网络连接"];
+            //            LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"请求失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+        }
+    } failure:^(NSError *error) {
+        DLog(@"error == %@", error);
+        [MBProgressHUD showAutoMessage:@"请求失败, 请检查您的网络连接"];
+        //        LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"请求失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+    }];
+}
+
+
+
+
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

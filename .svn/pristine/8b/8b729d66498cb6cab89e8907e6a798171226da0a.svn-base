@@ -1,0 +1,105 @@
+//
+//  CellTopHeaderView.m
+//  JBHProject
+//
+//  Created by 李俊恒 on 2017/4/13.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "CellTopHeaderView.h"
+@interface CellTopHeaderView()
+@property(nonatomic,strong)UILabel * typeLabel;// 勘察类型
+@property(nonatomic,strong)UILabel * useTimeLabel;// 耗时
+@property(nonatomic,strong)UIImageView * lineView;// 虚线
+
+@end
+@implementation CellTopHeaderView
+- (instancetype)initWithFrame:(CGRect)frame
+{
+    if (self = [super initWithFrame:frame]) {
+        _typeLabel = [[UILabel alloc]init];
+        _useTimeLabel = [[UILabel alloc]init];
+        _scrollerButton = [[UIButton alloc]init];
+        _lineView = [[UIImageView alloc]init];
+
+       
+        [self addSubview:_typeLabel];
+        [self addSubview:_useTimeLabel];
+        [self addSubview:_scrollerButton];
+        [self addSubview:_lineView];
+        [self setUI];
+    }
+    return self;
+}
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    
+    [_typeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self).offset(8*YZAdapter);
+        make.left.equalTo(self).offset(15*YZAdapter);
+        make.height.mas_equalTo(24*YZAdapter);
+        make.width.mas_equalTo(80*YZAdapter);
+    }];
+    [_useTimeLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self).offset(8*YZAdapter);
+        make.right.equalTo(self).offset(-15*YZAdapter);
+        make.height.mas_equalTo(24*YZAdapter);
+        make.width.mas_equalTo(100*YZAdapter);
+    }];
+    [_scrollerButton mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self).offset(5*YZAdapter);
+        make.left.equalTo(self).offset(Screen_W*0.5-18*YZAdapter);
+        make.width.mas_equalTo(18*YZAdapter);
+        make.height.mas_equalTo(18*YZAdapter);
+    }];
+    
+    [_lineView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.bottom.equalTo(self).offset(0);
+        make.left.equalTo(self).offset(0);
+        make.height.mas_equalTo(1*Size_ratio);
+        make.width.mas_equalTo(Screen_W);
+    }];
+    
+}
+#pragma mark ------ Action
+- (void)setTypeName:(NSString *)typeName
+{
+    _typeLabel.text = typeName;
+
+}
+- (void)setUserTimeStr:(NSString *)userTimeStr
+{
+    _useTimeLabel.text = userTimeStr;
+
+}
+- (void)topHeaderViewBtnClick:(UIButton *)sender
+{
+    sender.selected = YES;
+    if (self.cellTopHeaderViewDelegate && [self.cellTopHeaderViewDelegate respondsToSelector:@selector(CellTopHeaderViewButton:)])
+    {
+        // 调用代理方法
+        [self.cellTopHeaderViewDelegate CellTopHeaderViewButton:sender];
+    }
+}
+#pragma mark ------ Fucation
+- (void)setUI{
+    _typeLabel.backgroundColor = [UIColor groupTableViewBackgroundColor];
+    _typeLabel.textColor = [UIColor grayColor];
+    _typeLabel.font = [UIFont systemFontOfSize:13*YZAdapter];
+    _typeLabel.textAlignment = NSTextAlignmentCenter;
+    
+    _useTimeLabel.textColor = [UIColor grayColor];
+    _useTimeLabel.font = [UIFont systemFontOfSize:13*YZAdapter];
+    _useTimeLabel.adjustsFontSizeToFitWidth = YES;
+    _useTimeLabel.textAlignment = NSTextAlignmentCenter;
+    
+    [_scrollerButton setBackgroundImage:[UIImage imageNamed:@"下"] forState:0];
+    _scrollerButton.layer.cornerRadius = 15*YZAdapter;
+    [_scrollerButton addTarget:self action:@selector(topHeaderViewBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    _lineView.backgroundColor = [UIColor groupTableViewBackgroundColor];
+
+    [self layoutIfNeeded];
+}
+
+@end

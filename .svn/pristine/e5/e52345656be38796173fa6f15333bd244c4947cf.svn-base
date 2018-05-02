@@ -1,0 +1,497 @@
+//
+//  YZRealNameViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/5/5.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZRealNameViewController.h"
+#import "YZListenSetViewController.h"
+#import "YZTextField.h"
+
+#define KEY_WIDTH 122
+#define KEY_HEIGHT 53
+
+#define XBUTTON_MODIFY_TAG 8
+
+@interface YZRealNameViewController () <UITextFieldDelegate>
+
+@property (nonatomic, strong) UITextField *Name;
+@property (nonatomic, strong) YZTextField *Identity;
+
+@end
+
+@implementation YZRealNameViewController
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    self.tabBarController.tabBar.hidden = NO;
+    
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    self.view.backgroundColor = BackGround_Color;
+    
+    // 设置导航栏
+    [self customPushViewControllerNavBarTitle:@"实名认证" backGroundImageName:nil];
+    
+    // 添加控件
+    [self EditPage];
+    
+    [self customerGesturePop];
+    // Do any additional setup after loading the view.
+}
+
+#pragma mark - Private Method 右划返回上一个页面
+- (void)customerGesturePop {
+    UISwipeGestureRecognizer *swipeGestuer2 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleOtherSwipeGesture)];
+    swipeGestuer2.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:swipeGestuer2];
+}
+
+- (void) handleOtherSwipeGesture {
+    
+    [self.Name resignFirstResponder];
+    [self.Identity resignFirstResponder];
+    
+    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+    if ([YZUtil isBlankString:model.realname] || [YZUtil isBlankString:model.cardno]) {
+        YZAlertViewController * alertVC = [[YZAlertViewController alloc] initWithConfirmAction:^(NSString *inputText) {
+            
+        } andCancelAction:^{
+//            [self.navigationController popViewControllerAnimated:YES];
+            [super goBack];
+        }];
+        alertVC.RealID = @"real";
+        [self presentViewController:alertVC animated:YES completion:nil];
+    }else {
+//        [self.navigationController popViewControllerAnimated:YES];
+        [super goBack];
+    }
+}
+
+- (void)goBack {
+    [self.Name resignFirstResponder];
+    [self.Identity resignFirstResponder];
+    
+    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+    if ([YZUtil isBlankString:model.realname] || [YZUtil isBlankString:model.cardno]) {
+        YZAlertViewController * alertVC = [[YZAlertViewController alloc] initWithConfirmAction:^(NSString *inputText) {
+            
+        } andCancelAction:^{
+//            [self.navigationController popViewControllerAnimated:YES];
+            [super goBack];
+        }];
+        alertVC.RealID = @"real";
+        [self presentViewController:alertVC animated:YES completion:nil];
+    }else {
+//        [self.navigationController popViewControllerAnimated:YES];
+        [super goBack];
+    }
+}
+
+
+#pragma mark - 添加控件
+- (void)EditPage {
+    
+    
+    UILabel *prometLabel = [[UILabel alloc] initWithFrame:CGRectMake(19*YZAdapter, 34*YZAdapter, Screen_W-19*YZAdapter, 14*YZAdapter)];
+    prometLabel.text = @"完成实名认证";
+    prometLabel.font = FONT(13);
+    prometLabel.textColor = TimeFont_Color;
+    [self.view addSubview:prometLabel];
+    
+    
+    
+    UIView *NameView = [[UIView alloc] initWithFrame:CGRectMake(16*YZAdapter, 75*YZAdapter, Screen_W-32*YZAdapter, 47*YZAdapter)];
+    NameView.layer.borderWidth = 1*YZAdapter;
+    NameView.layer.borderColor = [LightLine_Color CGColor];
+    NameView.backgroundColor = WhiteColor;
+    
+    UILabel *NameLabel = [[UILabel alloc] initWithFrame:CGRectMake(0*YZAdapter, 17*YZAdapter, 78*YZAdapter, 15*YZAdapter)];
+    NameLabel.text = @"真实姓名";
+    NameLabel.font = FONT(14);
+    NameLabel.textAlignment = NSTextAlignmentCenter;
+    NameLabel.textColor = MainFont_Color;
+    [NameView addSubview:NameLabel];
+    
+    UIView *NView = [[UIView alloc] initWithFrame:CGRectMake(78*YZAdapter, 8*YZAdapter, 1*YZAdapter, 31*YZAdapter)];
+    NView.backgroundColor = BackGround_Color;
+    [NameView addSubview:NView];
+    
+    self.Name = [[UITextField alloc] initWithFrame:CGRectMake(90*YZAdapter, 17*YZAdapter, 200*YZAdapter, 15*YZAdapter)];
+    self.Name.placeholder = @"请输入您的真实姓名";
+    self.Name.font = FONT(14);
+    self.Name.textAlignment = NSTextAlignmentLeft;
+    self.Name.textColor = MainFont_Color;
+    [NameView addSubview:self.Name];
+
+    
+    
+    
+    UIView *IdentityView = [[UIView alloc] initWithFrame:CGRectMake(16*YZAdapter, 143*YZAdapter, Screen_W-32*YZAdapter, 47*YZAdapter)];
+    IdentityView.layer.borderWidth = 1*YZAdapter;
+    IdentityView.layer.borderColor = [LightLine_Color CGColor];
+    IdentityView.backgroundColor = WhiteColor;
+    
+    UILabel *IdentityLabel = [[UILabel alloc] initWithFrame:CGRectMake(0*YZAdapter, 17*YZAdapter, 78*YZAdapter, 15*YZAdapter)];
+    IdentityLabel.text = @"身份证号";
+    IdentityLabel.font = FONT(14);
+    IdentityLabel.textAlignment = NSTextAlignmentCenter;
+    IdentityLabel.textColor = MainFont_Color;
+    [IdentityView addSubview:IdentityLabel];
+    
+    UIView *IView = [[UIView alloc] initWithFrame:CGRectMake(78*YZAdapter, 8*YZAdapter, 1*YZAdapter, 31*YZAdapter)];
+    IView.backgroundColor = BackGround_Color;
+    [IdentityView addSubview:IView];
+    
+    
+    self.Identity = [[YZTextField alloc] initWithFrame:CGRectMake(90*YZAdapter, 17*YZAdapter, 200*YZAdapter, 15*YZAdapter)];
+    self.Identity.placeholder = @"请输入您的身份证号码";
+    self.Identity.font = FONT(14);
+    self.Identity.delegate = self;
+    self.Identity.textAlignment = NSTextAlignmentLeft;
+    self.Identity.textColor = MainFont_Color;
+//    [self.Identity setBorderStyle:UITextBorderStyleRoundedRect];
+//    [self.Identity setKeyboardType:UIKeyboardTypePhonePad];
+//    [self.Identity setClearButtonMode:UITextFieldViewModeWhileEditing];
+    [IdentityView addSubview:self.Identity];
+    
+    [self.view addSubview:IdentityView];
+    
+//    UIView *backView = [[UIView alloc] initWithFrame:CGRectMake(0, 52*YZAdapter, Screen_W, 1*YZAdapter)];
+//    backView.backgroundColor = BackGround_Color;
+//    [NameView addSubview:backView];
+    [self.view addSubview:NameView];
+    
+    
+    UIView *PView = [[UIView alloc] initWithFrame:CGRectMake(0, 532*YZAdapter, Screen_W, 1*YZAdapter)];
+    PView.backgroundColor = LightLine_Color;
+    [self.view addSubview:PView];
+    
+    UIView *PhoneView = [[UIView alloc] initWithFrame:CGRectMake(0, 533*YZAdapter, Screen_W, 68*YZAdapter)];
+    PhoneView.backgroundColor = WhiteColor;
+    
+
+    UIButton *ExitBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    ExitBtn.frame = CGRectMake(14*YZAdapter, 14*YZAdapter, Screen_W-28*YZAdapter, 42*YZAdapter);
+    [ExitBtn setTitle:@"提交认证" forState:UIControlStateNormal];
+    // 高亮状态
+    [ExitBtn setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [ExitBtn setTitleColor:TimeMainFont_Color forState:(UIControlStateHighlighted)];
+    // 正常状态
+//    [ExitBtn setImage:[UIImage imageNamed:@"green-1"] forState:UIControlStateNormal];
+    ExitBtn.tintColor = [UIColor whiteColor];
+    ExitBtn.layer.cornerRadius = 2.0*YZAdapter;
+    ExitBtn.backgroundColor = NewGreenButton_Color;
+    [ExitBtn addTarget:self action:@selector(handdleExitBtn) forControlEvents:UIControlEventTouchUpInside];
+    ExitBtn.titleLabel.font = FONT(15);
+    
+    [PhoneView addSubview:ExitBtn];
+    
+    [self.view addSubview:PhoneView];
+    
+}
+
+- (void)handdleExitBtn {
+    
+    [self.Name resignFirstResponder];
+    [self.Identity resignFirstResponder];
+    
+//    LKShowBubbleInfo([YZBubbleInfo StartBubbleTitle:@"保存中" BubbleImage:@"YZPromptSubmit"]);
+    
+    if (![YZUtil isBlankString:self.Name.text] && ![YZUtil isBlankString:self.Identity.text] && [YZUtil isIdentityCard:self.Identity.text]) {
+        YZALLService *USER_REALNAMEVERIFYRequest = [YZALLService zwb_requestWithUrl:USER_REALNAMEVERIFY isPost:YES];
+        
+        LKWaitBubble(@"认证中...");
+        
+        USER_REALNAMEVERIFYRequest.realname = self.Name.text;
+        USER_REALNAMEVERIFYRequest.cardno = self.Identity.text;
+        
+        [USER_REALNAMEVERIFYRequest zwb_sendRequestWithCompletion:^(id responseObject, BOOL success, NSString *message) {
+            DLog(@"%@", message);
+            if (success) {
+                DLog(@"return success:%@", responseObject);
+                NSString * code = responseObject[@"code"];
+                
+                if ([code integerValue] == 0) {
+//                    [MBProgressHUD hideHUDForView:nil];
+                    YZUserInfoModel *NewModel = [[YZUserInfoManager sharedManager] currentUserInfo];
+                    NewModel.realname = self.Name.text;
+                    NewModel.cardno = self.Identity.text;
+                    [[YZUserInfoManager sharedManager] resetUserInfoWithUserInfo:NewModel];
+                
+                    // 关闭进度加载页面
+                    LKRightBubble(@"认证成功", 2);
+                    
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"保存成功" BubbleImage:@"YZPromptSubmit"], 2);
+                    
+                    if ([self.BankID isEqualToString:@"bank"]) {
+                        [self.Name resignFirstResponder];
+                        [self.Identity resignFirstResponder];
+//                        [self.navigationController popViewControllerAnimated:YES];
+                        [super goBack];
+                    }else if ([self.BankID isEqualToString:@"Order"]) {
+                        YZListenSetViewController * YZListenController = [[YZListenSetViewController alloc]init];
+                        YZListenController.RealName = @"实名认证";
+                        [self.navigationController pushViewController:YZListenController animated:YES];
+                    }else {
+//                        [self.navigationController popToRootViewControllerAnimated:YES];
+                        [super goBack];
+                    }
+                }else if ([code integerValue] == 105001){
+                    LKHideBubble();
+                    [MBProgressHUD showAutoMessage:@"姓名无效"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"姓名无效" BubbleImage:@"YZPromptSubmit"], 1);
+                }else if ([code integerValue] == 105002){
+                    LKHideBubble();
+                    [MBProgressHUD showAutoMessage:@"身份证号无效"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"身份证号无效" BubbleImage:@"YZPromptSubmit"], 1);
+                }else if ([code integerValue] == 105003){
+                    LKHideBubble();
+                    [MBProgressHUD showAutoMessage:@"不能重复认证"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"不能重复认证" BubbleImage:@"YZPromptSubmit"], 1);
+                }else if ([code integerValue] == 105004){
+                    LKHideBubble();
+                    [MBProgressHUD showAutoMessage:@"姓名与身份证号不匹配"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"姓名与身份证号不匹配" BubbleImage:@"YZPromptSubmit"], 1);
+                }else if ([code integerValue] == 105009){
+                    LKHideBubble();
+                    [MBProgressHUD showAutoMessage:@"其他错误，请重试"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"其他错误，请重试" BubbleImage:@"YZPromptSubmit"], 1);
+                }else if ([code integerValue] == 900102) {
+                    LKHideBubble();
+                    [MBProgressHUD showAutoMessage:@"登录信息失效"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"登录信息失效" BubbleImage:@"YZPromptSubmit"], 1);
+                    YZLoginViewController * vc = [[YZLoginViewController alloc]init];
+                    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+                    vc.AlertPhone = model.Usre_Phone;
+                    
+                    [[YZUserInfoManager sharedManager] didLoginOut];
+                    [self.navigationController pushViewController:vc animated:YES];
+                }
+
+            } else {
+                DLog(@"return failure");
+                LKHideBubble();
+                [MBProgressHUD showAutoMessage:@"保存失败, 请检查您的网络连接"];
+//                LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"保存失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+            }
+        } failure:^(NSError *error) {
+            DLog(@"error == %@", error);
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"保存失败, 请检查您的网络连接"];
+//            LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"保存失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+        }];
+    }else {
+        LKHideBubble();
+        [MBProgressHUD showAutoMessage:@"请填写正确的姓名和身份证号"];
+//        LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"请填写正确的姓名和身份证号" BubbleImage:@"YZPromptSubmit"], 1);
+    }
+    
+    
+}
+
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    
+    [self.Name resignFirstResponder];
+    [self.Identity resignFirstResponder];
+}
+
+//#pragma mark - textField delegate functions
+//
+//- (void)textFieldDidBeginEditing:(UITextField *)textField
+//{
+//    NSLog(@"keyboard begin edit");
+//    
+//    //choose which keyboard
+//    if(textField == _Identity)
+//    {
+//        //delay some seconds because button appears after the keyboard, this method works but not well T_T
+//        [self performSelector:@selector(addXButtonToKeyboard) withObject:nil afterDelay:0.1];
+//    }
+//}
+//
+//- (void)textFieldDidEndEditing:(UITextField *)textField
+//{
+//    //when the keyboard hide, remove the Xbutton
+//    NSLog(@"keyboard end edit");
+//    if(textField == _Identity)
+//        [self removeXButtonFromKeyBoard];
+//}
+//
+//#pragma mark - modify method:add button and callback
+//
+//- (void)addXButtonToKeyboard
+//{
+//    
+//    if (Screen_W == 320.0) {
+//        [self addXButtonToKeyboardWithSelector:@selector(onXButtonClicked)
+//                                     normalImg:[UIImage imageNamed:@"106Light"]
+//                                  highlightImg:[UIImage imageNamed:@"106White"]];
+//    }else if (Screen_W == 375.0) {
+//        [self addXButtonToKeyboardWithSelector:@selector(onXButtonClicked)
+//                                     normalImg:[UIImage imageNamed:@"124Light"]
+//                                  highlightImg:[UIImage imageNamed:@"124White"]];
+//    }else if (Screen_W == 414.0) {
+//        [self addXButtonToKeyboardWithSelector:@selector(onXButtonClicked)
+//                                     normalImg:[UIImage imageNamed:@"137Light"]
+//                                  highlightImg:[UIImage imageNamed:@"137White"]];
+//    }
+//    
+//}
+//
+//- (void)addXButtonToKeyboardWithSelector:(SEL)button_callback normalImg:(UIImage *)normal_icon highlightImg:(UIImage *)highlight_icon
+//{
+//    
+//    if (Screen_W == 320.0) {
+//        //create the XButton
+//        UIButton *xButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//        xButton.tag = XBUTTON_MODIFY_TAG;
+//        xButton.frame = CGRectMake(0, 0, 103, 53); //the half size of the original image
+//        xButton.adjustsImageWhenDisabled = NO;
+//        
+//        [xButton setImage:normal_icon forState:UIControlStateNormal];
+//        [xButton setImage:highlight_icon forState:UIControlStateHighlighted];
+//        [xButton addTarget:self action:button_callback forControlEvents:UIControlEventTouchUpInside];
+//        
+//        //add to keyboard
+//        int cnt = [[UIApplication sharedApplication] windows].count;
+//        UIWindow *keyboardWindow = [[[UIApplication sharedApplication] windows] objectAtIndex:cnt - 1];
+//        xButton.frame = CGRectMake(0, keyboardWindow.frame.size.height - 53, 103, 53);
+//        [keyboardWindow addSubview:xButton];
+//    }else if (Screen_W == 375.0) {
+//        //create the XButton
+//        UIButton *xButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//        xButton.tag = XBUTTON_MODIFY_TAG;
+//        xButton.frame = CGRectMake(0, 0, 122, 53); //the half size of the original image
+//        xButton.adjustsImageWhenDisabled = NO;
+//        
+//        [xButton setImage:normal_icon forState:UIControlStateNormal];
+//        [xButton setImage:highlight_icon forState:UIControlStateHighlighted];
+//        [xButton addTarget:self action:button_callback forControlEvents:UIControlEventTouchUpInside];
+//        
+//        //add to keyboard
+//        int cnt = [[UIApplication sharedApplication] windows].count;
+//        UIWindow *keyboardWindow = [[[UIApplication sharedApplication] windows] objectAtIndex:cnt - 1];
+//        xButton.frame = CGRectMake(0, keyboardWindow.frame.size.height - 53, 122, 53);
+//        [keyboardWindow addSubview:xButton];
+//    }else if (Screen_W == 414.0) {
+//        //create the XButton
+//        UIButton *xButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//        xButton.tag = XBUTTON_MODIFY_TAG;
+//        xButton.frame = CGRectMake(0, 0, 135, 55.5); //the half size of the original image
+//        xButton.adjustsImageWhenDisabled = NO;
+//        
+//        [xButton setImage:normal_icon forState:UIControlStateNormal];
+//        [xButton setImage:highlight_icon forState:UIControlStateHighlighted];
+//        [xButton addTarget:self action:button_callback forControlEvents:UIControlEventTouchUpInside];
+//        
+//        //add to keyboard
+//        int cnt = [[UIApplication sharedApplication] windows].count;
+//        UIWindow *keyboardWindow = [[[UIApplication sharedApplication] windows] objectAtIndex:cnt - 1];
+//        xButton.frame = CGRectMake(0, keyboardWindow.frame.size.height - 55.5, 135, 55.5);
+//        [keyboardWindow addSubview:xButton];
+//    }else {
+//        //create the XButton
+//        UIButton *xButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//        xButton.tag = XBUTTON_MODIFY_TAG;
+//        xButton.frame = CGRectMake(0, 0, KEY_WIDTH, KEY_HEIGHT); //the half size of the original image
+//        xButton.adjustsImageWhenDisabled = NO;
+//        
+//        [xButton setImage:normal_icon forState:UIControlStateNormal];
+//        [xButton setImage:highlight_icon forState:UIControlStateHighlighted];
+//        [xButton addTarget:self action:button_callback forControlEvents:UIControlEventTouchUpInside];
+//        
+//        //add to keyboard
+//        int cnt = [[UIApplication sharedApplication] windows].count;
+//        UIWindow *keyboardWindow = [[[UIApplication sharedApplication] windows] objectAtIndex:cnt - 1];
+//        xButton.frame = CGRectMake(0, keyboardWindow.frame.size.height - KEY_HEIGHT, KEY_WIDTH, KEY_HEIGHT);
+//        [keyboardWindow addSubview:xButton];
+//    }
+//    
+//    
+//}
+//
+////when XButton clicked, textField add 'X' char
+//- (void)onXButtonClicked
+//{
+//    self.Identity.text = [_Identity.text stringByAppendingString:@"X"];
+//}
+//
+////remove XButton from keyboard when the keyboard hide
+//- (void)removeXButtonFromKeyBoard
+//{
+//    int cnt = [[UIApplication sharedApplication] windows].count;
+//    UIWindow *keyboardWindow = [[[UIApplication sharedApplication] windows] objectAtIndex:cnt - 1];
+//    [[keyboardWindow viewWithTag:XBUTTON_MODIFY_TAG] removeFromSuperview];
+//}
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    //拿到为改变前的字符串
+    NSString *text = [textField text];
+    //键入字符集，\b标示删除键
+    NSCharacterSet *characterSet = [NSCharacterSet characterSetWithCharactersInString:@"0123456789\b"];
+    //对当前键入字符进行空格过滤
+    string = [string stringByReplacingOccurrencesOfString:@" " withString:@""];
+    //invertedSet会对当前结果集取反，检查当前键入字符是否在字符集合中，如果不在则直接返回NO 不改变textField值
+    if ([string rangeOfCharacterFromSet:[characterSet invertedSet]].location != NSNotFound) {
+        return NO;
+    }
+    //增加当前键入字符在改变前的字符串尾部
+    text = [text stringByReplacingCharactersInRange:range withString:string];
+    //再次确认去掉字符串中空格
+    text = [text stringByReplacingOccurrencesOfString:@" " withString:@""];
+    //初始化字符用来保存格式化后的字符串
+    NSString *newString = @"";
+    //while中对text进行格式化
+    while (text.length > 0) {
+        //按4位字符进行截取，如果当前字符不足4位则按照当前字符串的最大长度截取
+        NSString *subString = [text substringToIndex:MIN(text.length, 18)];
+        //将截取后的字符放入需要格式化的字符串中
+        newString = [newString stringByAppendingString:subString];
+        if (subString.length == 18) {
+            //截取的字符串长度满4位则在后面增加一个空格符
+            newString = [newString stringByAppendingString:@" "];
+        }
+        //将text中截取掉字符串去掉
+        text = [text substringFromIndex:MIN(text.length, 18)];
+    }
+    //再次确认过滤掉除指定字符以外的字符
+    newString = [newString stringByTrimmingCharactersInSet:[characterSet invertedSet]];
+    //国内银行卡一般为16~19位 格式化后增加4个空格 也就是最多23个字符
+    if (newString.length > 18) {
+        return NO;
+    }
+    //手动对textField赋值
+    [textField setText:newString];
+    //返回NO 则不通过委托自动往当前字符后面增加字符，达到格式化效果
+    return NO;
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

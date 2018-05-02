@@ -1,0 +1,212 @@
+//
+//  BaseViewController.m
+//  TTY
+//
+//  Created by 李俊恒 on 16/4/2.
+//  Copyright © 2016年 sinze. All rights reserved.
+//
+
+#import "BaseViewController.h"
+
+@interface BaseViewController ()<UINavigationControllerDelegate>
+@property (nonatomic,strong)UIButton * leftButton;
+@property (nonatomic,strong) UILabel *titleLabel;
+@end
+
+@implementation BaseViewController
+#pragma mark ========== lifecircle
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self.navigationController.navigationBar addSubview:self.navBarLineView];
+    [self.navigationController.navigationBar setTranslucent:NO];
+    [self.navigationController.navigationBar setBarStyle:UIBarStyleBlack];
+    self.navigationController.navigationBar.barTintColor = [UIColor whiteColor];
+    
+    
+    [self removeNavigationBarLine];
+
+}
+-(void)hiddenBootomLineView
+{
+    self.navBarLineView.hidden = YES;
+}
+- (UIImageView *)navBarLineView
+{
+    if (_navBarLineView == nil) {
+        _navBarLineView = [[UIImageView alloc]initWithFrame:CGRectMake(0, 43, Screen_W, 1)];
+        _navBarLineView.backgroundColor = LJHColor(213, 213, 213);
+    }
+    return _navBarLineView;
+    
+}
+
+- (void)hiddenLeftButton
+{
+    _leftButton.hidden = YES;
+}
+#pragma mark =========== Event
+/**
+ *  导航栏左按钮的点击事件
+ */
+- (void)navLeftItemAction
+{
+
+}
+- (void)navRightButtonClicked
+{
+    // 客服电话
+    NSMutableString * str=[[NSMutableString alloc] initWithFormat:@"tel:%@",[[NSUserDefaults standardUserDefaults]objectForKey:@"service_tel"]];
+    UIWebView* callWebview = [[UIWebView alloc] init];
+    [callWebview loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:str]]];
+    [self.view addSubview:callWebview];
+    self.rightBtn.enabled =NO;
+    
+    [self performSelector:@selector(changeButtonStatus) withObject:nil afterDelay:1.0f];//防止重复点击
+    
+}
+
+-(void)changeButtonStatus{
+    
+    self.rightBtn.enabled =YES;
+}
+
+/**
+ *  重写导航栏的返回按钮事件
+ */
+- (void)goBack
+{
+    self.navBarLineView.hidden = YES;
+ [self.navigationController popViewControllerAnimated:YES];
+
+}
+/**
+ *  去除navigationBar下面的横线
+ */
+- (void)removeNavigationBarLine {
+    
+    self.navigationController.navigationBar.shadowImage = [[UIImage alloc]init];
+
+}
+
+#pragma mark =========== KeyBoardNotify
+
+#pragma mark =========== Fouction
+
+- (void)customNavigationBarTitle:(NSString *)title backGroundImageName:(NSString *)imageNamed
+{
+
+    [self addtitleWithName:title];
+}
+
+
+- (void)customPushViewControllerNavBarTitle:(NSString *)title backGroundImageName:(NSString *)imageNamed
+{
+    [self addPushViewControllertitleWithName:title];
+    
+}
+#pragma mark ----------- HandleModelDatasource
+
+#pragma mark ----------- HandleView
+- (void)addServiceRightButton
+{
+    
+    UIBarButtonItem * rightItem = [[UIBarButtonItem alloc]initWithCustomView:self.rightBtn];
+    
+    self.navigationItem.rightBarButtonItem = rightItem;
+    
+}
+- (UILabel *)titleLabel
+{
+    if (_titleLabel == nil) {
+        _titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 200*Size_ratio, 40)];
+        _titleLabel.textColor = [UIColor jhUserInfoBlack];
+        _titleLabel.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:20*Size_ratio];
+        _titleLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _titleLabel;
+}
+- (UIButton *)rightBtn
+{
+    if (_rightBtn == nil) {
+        _rightBtn = [[UIButton alloc]initWithFrame:CGRectMake(0, 0, 44*YZAdapter, 44)];
+        UIImageView * btnImage = [[UIImageView alloc]initWithImage:[UIImage imageNamed:@"客服"]];
+        btnImage.frame = CGRectMake(11, 5, 25, 25);
+        [_rightBtn addSubview:btnImage];
+        [_rightBtn setTitle:@"客服" forState:UIControlStateNormal];//设置button的title
+        _rightBtn.titleLabel.font = FONT(10);//title字体大小
+        _rightBtn.titleLabel.textAlignment = NSTextAlignmentCenter;//设置title的字体居中
+        [_rightBtn setTitleColor:[UIColor grayColor] forState:UIControlStateNormal];//设置title在一般情况下为白色字体
+        [_rightBtn setTitleColor:[UIColor blackColor] forState:UIControlStateHighlighted];//设置title在button被选中情况下为灰色字体
+        _rightBtn.titleEdgeInsets = UIEdgeInsetsMake(25*YZAdapter, 0, 0, 0);//设置title在button上的位置（上top，左left，下bottom，右right）
+        [_rightBtn addTarget:self action:@selector(navRightButtonClicked) forControlEvents:UIControlEventTouchUpInside];
+
+    }
+    return _rightBtn;
+}
+/**
+ *  为从一级界面推出的二级界面设置导航栏的属性
+ *
+ *  @param name 导航栏的标题
+ */
+- (void)addPushViewControllertitleWithName:(NSString *)name
+{
+    self.titleLabel.text = name;
+
+    self.navigationItem.titleView = self.titleLabel;
+    
+    _leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    UIBarButtonItem *leftItem = [[UIBarButtonItem alloc]initWithCustomView:_leftButton];
+    
+    self.navigationItem.leftBarButtonItem = leftItem;
+    
+    //设置左Button属性
+    [_leftButton setFrame:CGRectMake(0, 0, 44, 44)];
+
+    UIImageView * imageViewBtn = [[UIImageView alloc]initWithFrame:CGRectMake(0, 9.5*Size_ratio, 25*Size_ratio, 25*Size_ratio)];
+    imageViewBtn.image = [UIImage imageNamed:@"返回"];
+
+    [_leftButton addSubview:imageViewBtn];
+    [_leftButton setExclusiveTouch :YES];
+    [_leftButton addTarget:self action:@selector(goBack) forControlEvents:UIControlEventTouchUpInside];
+
+}
+
+/**
+ *  添加导航栏的标题
+ *
+ *  @param name 标题名字
+ */
+- (void)addtitleWithName:(NSString *)name
+{
+    UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 200*Size_ratio, 40)];
+    titleLabel.text = name;
+    titleLabel.textColor = [UIColor jhUserInfoBlack];
+    if ([name isEqualToString:@"个人中心"]) {
+        titleLabel.textColor = WhiteColor;
+    }
+    titleLabel.font = [UIFont fontWithName:@"Arial Rounded MT Bold" size:20*Size_ratio];
+    titleLabel.textAlignment = NSTextAlignmentCenter;
+    self.navigationItem.titleView = titleLabel;
+}
+- (void)setNaviTitle:(NSString *)naviTitle
+{
+    _naviTitle = naviTitle;
+    
+    _titleLabel.text = _naviTitle;
+    
+
+}
+- (void)addLeftNavigationBarTitleWith:(NSString *)leftBtnImage
+{
+
+}
+
+#pragma mark ----------- NetRequest
+
+#pragma mark =========== delegate
+@end

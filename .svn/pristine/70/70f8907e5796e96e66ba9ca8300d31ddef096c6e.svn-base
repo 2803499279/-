@@ -1,0 +1,482 @@
+//
+//  YZCompleteViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/4/11.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZCompleteViewController.h"
+#import "JSHAREService.h"
+#import "ShareView.h"
+#import "V_MyShareSheet.h"
+
+@interface YZCompleteViewController (){
+    V_MyShareSheet *_myShareSheet;
+}
+
+@property (nonatomic, strong) UIImageView *PromptImage;
+@property (nonatomic, strong) UILabel *SumbitLabel;
+@property (nonatomic, strong) UILabel *PromptLabel;
+@property (nonatomic, strong) UILabel *PriceLabel;
+@property (nonatomic, strong) UILabel *RewardPromptLabel;
+@property (nonatomic, strong) UIButton *ListenButton;
+
+@property (nonatomic, strong) ShareView * shareView;
+@end
+
+@implementation YZCompleteViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    
+    self.view.backgroundColor = YZColor(248, 248, 248);
+    
+    [self customPushViewControllerNavBarTitle:@"聚保汇" backGroundImageName:nil];
+    
+    [self hiddenLeftButton];
+    
+    // 添加控件
+    [self AddUI];
+    
+}
+
+- (void)AddUI {
+    
+    _PromptImage = [[UIImageView alloc] initWithFrame:CGRectMake(85.5*YZAdapter, 38.5*YZAdapter, 204*YZAdapter, 197*YZAdapter)];
+    _PromptImage.image = [UIImage imageNamed:@"YZPromptSubmitIm"];
+//    _PromptImage.contentMode = UIViewContentModeScaleAspectFit;//关键在此
+    [self.view addSubview:_PromptImage];
+    
+    
+    //    _SumbitLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 55*YZAdapter, Screen_W, 13*YZAdapter)];
+    //    _SumbitLabel.text = @"累计完成 51 单";
+    //    _SumbitLabel.font = FONTS(12);
+    //    _SumbitLabel.textColor = WhiteColor;
+    //    _SumbitLabel.textAlignment = NSTextAlignmentCenter;
+    //    [self.view addSubview:_SumbitLabel];
+    
+    _PromptLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 240*YZAdapter, Screen_W, 25*YZAdapter)];
+    _PromptLabel.text = @"恭喜 ! 派单完成 !";
+    _PromptLabel.font = FONT(23);
+    _PromptLabel.textColor = MainFont_Color;
+    _PromptLabel.textAlignment = NSTextAlignmentCenter;
+    [self.view addSubview:_PromptLabel];
+    
+    _PriceLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 300*YZAdapter, Screen_W, 40*YZAdapter)];
+    _PriceLabel.text = [NSString stringWithFormat:@"￥ %@", self.price];
+    _PriceLabel.font = FONTS(30);
+    _PriceLabel.textColor = YZColor(255, 136, 27);
+    _PriceLabel.textAlignment = NSTextAlignmentCenter;
+    [self.view addSubview:_PriceLabel];
+    
+    
+    _RewardPromptLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 347*YZAdapter, Screen_W, 16*YZAdapter)];
+    _RewardPromptLabel.text = @"代勘奖励已存入钱包";
+    _RewardPromptLabel.font = FONT(14);
+    _RewardPromptLabel.textColor = TimeFont_Color;
+    _RewardPromptLabel.textAlignment = NSTextAlignmentCenter;
+    [self.view addSubview:_RewardPromptLabel];
+    
+    
+    UIButton *shareButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [shareButton  setExclusiveTouch :YES];
+    shareButton.frame = CGRectMake(10*YZAdapter, 403*YZAdapter, Screen_W - 20*YZAdapter, 42*YZAdapter);
+    [shareButton setTitle:@"分享给好友" forState:UIControlStateNormal];
+    [shareButton setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [shareButton setTitleColor:TimeMainFont_Color forState:(UIControlStateHighlighted)];
+    shareButton.tintColor = [UIColor whiteColor];
+    shareButton.backgroundColor = NewGreenButton_Color;
+    shareButton.layer.cornerRadius = 2.0*YZAdapter;
+    shareButton.titleLabel.font = FONT(16);
+    [shareButton addTarget:self action:@selector(handleshareButton) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:shareButton];
+    
+    _ListenButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [_ListenButton  setExclusiveTouch :YES];
+    _ListenButton.frame = CGRectMake(10*YZAdapter, 468*YZAdapter, Screen_W - 20*YZAdapter, 42*YZAdapter);
+    [_ListenButton setTitle:@"好, 继续听单" forState:UIControlStateNormal];
+    [_ListenButton setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [_ListenButton setTitleColor:TimeMainFont_Color forState:(UIControlStateHighlighted)];
+    _ListenButton.tintColor = TimeFont_Color;
+    _ListenButton.backgroundColor = YZColor(248, 248, 248);
+    //边框宽度
+    [_ListenButton.layer setBorderWidth:1.0];
+    //设置边框颜色有两种方法：第一种如下:
+    //    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    //    CGColorRef colorref = CGColorCreate(colorSpace,(CGFloat[]){ 0, 0, 0, 1 });
+    //    [_ListenButton.layer setBorderColor:colorref];//边框颜色
+    //第二种方法如下:
+    _ListenButton.layer.borderColor=NewGreenButton_Color.CGColor;
+    
+    _ListenButton.titleLabel.font = FONT(16);
+    [_ListenButton addTarget:self action:@selector(handleListenButton) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_ListenButton];
+    
+    
+}
+
+- (void)handleshareButton {
+    
+#pragma mark - 极光分享
+    //    if ([JSHAREService isQQInstalled]) {
+    //        [self.shareView showWithContentType:JSHARELink];
+    //    }else {
+    //        [MBProgressHUD showAutoMessage:@"分享失败"];
+    //    }
+    NSInteger viewType = 100 - 100;
+    _myShareSheet = [[V_MyShareSheet alloc]initWithViewType:viewType];
+    _myShareSheet.actionVC = self;
+    _myShareSheet.ObjectNil = ^{
+        _myShareSheet = nil;
+    };
+    [_myShareSheet show];
+}
+
+#pragma mark - 点击继续听单
+- (void)handleListenButton {
+    // 返回根视图控制器
+    [self.navigationController popToRootViewControllerAnimated:YES];
+    
+    self.tabBarController.tabBar.hidden = NO;
+    
+    //    UIAlertController *Share = [UIAlertController alertControllerWithTitle:nil message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    //    Share.view.frame = CGRectMake(0, 300, Screen_W, 200);
+    //    Share.view.backgroundColor = [UIColor redColor];
+    //
+    //    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil];
+    //    [Share addAction:cancelAction];
+    //
+    //    [self presentViewController:Share animated:YES completion:nil];
+#pragma mark - 友盟分享
+    //    [UMSocialUIManager setPreDefinePlatforms:@[@(UMSocialPlatformType_Sina),@(UMSocialPlatformType_QQ),@(UMSocialPlatformType_WechatSession),@(UMSocialPlatformType_DingDing)]];
+    //    [UMSocialUIManager showShareMenuViewInWindowWithPlatformSelectionBlock:^(UMSocialPlatformType platformType, NSDictionary *userInfo) {
+    //        // 根据获取的platformType确定所选平台进行下一步操作
+    //        if (platformType == UMSocialPlatformType_Sina) {
+    //            [self shareWebPageToPlatformType:platformType];
+    //        }else if (platformType == UMSocialPlatformType_QQ) {
+    //
+    //        }else if (platformType == UMSocialPlatformType_WechatSession) {
+    //
+    //        }else if (platformType == UMSocialPlatformType_DingDing) {
+    //            [self shareWebPageToPlatformType:platformType];
+    //        }
+    //    }];
+}
+//
+//- (void)shareWebPageToPlatformType:(UMSocialPlatformType)platformType
+//{
+//    //创建分享消息对象
+//    UMSocialMessageObject *messageObject = [UMSocialMessageObject messageObject];
+//
+//    //创建网页内容对象
+//    NSString* thumbURL =  @"https://mobile.umeng.com/images/pic/home/social/img-1.png";
+//    UMShareWebpageObject *shareObject = [UMShareWebpageObject shareObjectWithTitle:@"欢迎使用【友盟+】社会化组件U-Share" descr:@"欢迎使用【友盟+】社会化组件U-Share，SDK包最小，集成成本最低，助力您的产品开发、运营与推广！" thumImage:thumbURL];
+//    //设置网页地址
+//    shareObject.webpageUrl = @"http://mobile.umeng.com/social";
+//
+//    //分享消息对象设置分享内容对象
+//    messageObject.shareObject = shareObject;
+//
+//    //调用分享接口
+//    [[UMSocialManager defaultManager] shareToPlatform:platformType messageObject:messageObject currentViewController:self completion:^(id data, NSError *error) {
+//        if (error) {
+//            UMSocialLogInfo(@"************Share fail with error %@*********",error);
+//        }else{
+//            if ([data isKindOfClass:[UMSocialShareResponse class]]) {
+//                UMSocialShareResponse *resp = data;
+//                //分享结果消息
+//                UMSocialLogInfo(@"response message is %@",resp.message);
+//                //第三方原始返回的数据
+//                UMSocialLogInfo(@"response originalResponse data is %@",resp.originalResponse);
+//
+//            }else{
+//                UMSocialLogInfo(@"response data is %@",data);
+//            }
+//        }
+////        [self alertWithError:error];
+//        NSLog(@"-================================%@", error);
+//    }];
+//}
+
+
+
+- (ShareView *)shareView {
+    if (!_shareView) {
+        _shareView = [ShareView getFactoryShareViewWithCallBack:^(JSHAREPlatform platform, JSHAREMediaType type) {
+            switch (type) {
+                case JSHARELink:
+                    [self shareLinkWithPlatform:platform];
+                    break;
+                    
+                default:
+                    break;
+            }
+            
+        }];
+        [self.view addSubview:self.shareView];
+    }
+    return _shareView;
+}
+
+- (void)shareLinkWithPlatform:(JSHAREPlatform)platform {
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = platform;
+    NSString *imageURL = self.share_pic;
+    //    message.url = @"https://www.jiguang.cn/";
+    //    message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //    message.title = @"欢迎使用极光社会化组件JShare";
+    //    message.platform = platform;
+    //    NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+    //    //创建网页内容对象
+    //    NSString* thumbURL =  @"https://mobile.umeng.com/images/pic/home/social/img-1.png";
+    //    UMShareWebpageObject *shareObject = [UMShareWebpageObject shareObjectWithTitle:@"欢迎使用【友盟+】社会化组件U-Share" descr:@"欢迎使用【友盟+】社会化组件U-Share，SDK包最小，集成成本最低，助力您的产品开发、运营与推广！" thumImage:thumbURL];
+    //    //设置网页地址
+    //    shareObject.webpageUrl = @"http://mobile.umeng.com/social";
+    //
+    //    //分享消息对象设置分享内容对象
+    //    messageObject.shareObject = shareObject;
+    //
+    //    //调用分享接口
+    //    [[UMSocialManager defaultManager] shareToPlatform:platformType messageObject:messageObject currentViewController:self completion:^(id data, NSError *error) {
+    //        if (error) {
+    //            UMSocialLogInfo(@"************Share fail with error %@*********",error);
+    //        }else{
+    //            if ([data isKindOfClass:[UMSocialShareResponse class]]) {
+    //                UMSocialShareResponse *resp = data;
+    //                //分享结果消息
+    //                UMSocialLogInfo(@"response message is %@",resp.message);
+    //                //第三方原始返回的数据
+    //                UMSocialLogInfo(@"response originalResponse data is %@",resp.originalResponse);
+    //
+    //            }else{
+    //                UMSocialLogInfo(@"response data is %@",data);
+    //            }
+    //        }
+    ////        [self alertWithError:error];
+    //        DLog(@"-================================%@", error);
+    //    }];
+}
+
+
+- (void)shareQQFriendAction {
+    NSLog(@"QQ好友");
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = JSHAREPlatformQQ;
+    NSString *imageURL = self.share_pic;
+    //    message.url = @"https://www.jiguang.cn/";
+    //    message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //    message.title = @"欢迎使用极光社会化组件JShare";
+    //    message.platform = platform;
+    //    NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+}
+
+- (void)shareQQAction {
+    NSLog(@"QQ空间");
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = JSHAREPlatformQzone;
+    NSString *imageURL = self.share_pic;
+    //    message.url = @"https://www.jiguang.cn/";
+    //    message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //    message.title = @"欢迎使用极光社会化组件JShare";
+    //    message.platform = platform;
+    //    NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+}
+
+- (void)shareWXFriendAction {
+    NSLog(@"微信好友分享");
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = JSHAREPlatformWechatSession;
+    NSString *imageURL = self.share_pic;
+    //        message.url = @"https://www.jiguang.cn/";
+    //        message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //        message.title = @"欢迎使用极光社会化组件JShare";
+    //        message.platform = JSHAREPlatformWechatSession;
+    //        NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+}
+
+- (void)shareWXAction {
+    NSLog(@"微信朋友圈");
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = JSHAREPlatformWechatTimeLine;
+    NSString *imageURL = self.share_pic;
+    //        message.url = @"https://www.jiguang.cn/";
+    //        message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //        message.title = @"欢迎使用极光社会化组件JShare";
+    //        message.platform = JSHAREPlatformWechatTimeLine;
+    //        NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+}
+
+- (void)shareWXSAction {
+    NSLog(@"微信收藏");
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = JSHAREPlatformWechatFavourite;
+    NSString *imageURL = self.share_pic;
+    //        message.url = @"https://www.jiguang.cn/";
+    //        message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //        message.title = @"欢迎使用极光社会化组件JShare";
+    //        message.platform = JSHAREPlatformWechatFavourite;
+    //        NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+}
+
+- (void)shareSinaAction {
+    NSLog(@"新浪微博");
+    JSHAREMessage *message = [JSHAREMessage message];
+    message.mediaType = JSHARELink;
+    message.url = self.share_link;
+    message.text = self.share_content;
+    message.title = self.share_title;
+    message.platform = JSHAREPlatformSinaWeibo;
+    NSString *imageURL = self.share_pic;
+    //        message.url = @"https://www.jiguang.cn/";
+    //        message.text = @"JShare SDK支持主流社交平台、帮助开发者轻松实现社会化功能！";
+    //        message.title = @"欢迎使用极光社会化组件JShare";
+    //        message.platform = JSHAREPlatformSinaWeibo;
+    //        NSString *imageURL = @"http://img2.3lian.com/2014/f5/63/d/23.jpg";
+    
+    NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:imageURL]];
+    
+    
+    
+    message.image = imageData;
+    [JSHAREService share:message handler:^(JSHAREState state, NSError *error) {
+        
+        DLog(@"分享回调");
+        
+        DLog(@"分享回调===%lu", (unsigned long)state);
+        DLog(@"分享回调===%@", error);
+    }];
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    self.tabBarController.tabBar.hidden = NO;
+    
+}
+/*
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ */
+
+@end
+

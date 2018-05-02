@@ -1,0 +1,360 @@
+//
+//  YZHeadViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/6/19.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZHeadViewController.h"
+#import "CYPhotoPreviewer.h"
+#import "LPActionSheet.h"
+
+@interface YZHeadViewController () <UIImagePickerControllerDelegate, UINavigationControllerDelegate>
+
+@property(nonatomic, strong)UIButton * rightButton;
+@property(nonatomic, strong)UIImageView * HeadImage;
+@property(nonatomic, strong)CYPhotoPreviewer *previewer;
+@property (nonatomic, strong) NSString* fullPathToFile;
+@end
+
+@implementation YZHeadViewController
+
+- (void)viewWillAppear:(BOOL)animated {
+    
+    [super viewWillAppear:animated];
+//    self.tabBarController.tabBar.hidden = YES;
+//    self.tabBarController.tabBar.translucent = YES;
+    
+    if ([self.IDStr isEqualToString:@"头像"]) {
+        YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+        
+        if (model.face) {
+            _HeadImage.image = model.face;
+        }else {
+            if (![YZUtil isBlankString:model.face_url]) {
+                [_HeadImage sd_setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@", model.face_url]] placeholderImage:nil];
+                [[SDImageCache sharedImageCache] setValue:nil forKey:@"memCache"];
+            }else {
+                _HeadImage.image = [UIImage imageNamed:@"HeadBigImage"];
+            }
+        }
+        
+        self.previewer = [[CYPhotoPreviewer alloc] init];
+        [_previewer previewFromImageView:self.HeadImage inContainer:self.view];
+    }
+    
+    self.IDStr = nil;
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [self.previewer.scrollView setZoomScale:1.0 animated:YES];
+    [super viewWillDisappear:animated];
+//    self.tabBarController.tabBar.hidden = NO;
+//    self.tabBarController.tabBar.translucent = NO;
+}
+
+
+
+- (UIButton *)rightButton
+{
+    if (_rightButton == nil) {
+        _rightButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_rightButton setFrame:CGRectMake(0, 2.5*YZAdapter, 25*YZAdapter, 25*YZAdapter)];
+        [_rightButton setImage:[UIImage imageNamed:@"YZMore"] forState:0];
+        [_rightButton  setExclusiveTouch :YES];
+        [_rightButton addTarget:self action:@selector(rightBarButtonClick:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _rightButton;
+}
+
+- (void)addNavigationBarRightButton
+{
+    UIBarButtonItem * rightItem = [[UIBarButtonItem alloc]initWithCustomView:self.rightButton];
+    self.navigationItem.rightBarButtonItem = rightItem;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = BackGround_Color;
+    // 添加头像控件
+    [self AddHeadImage];
+    // 设置导航栏
+    [self customPushViewControllerNavBarTitle:@"个人信息" backGroundImageName:nil];
+    [self addNavigationBarRightButton];// 添加
+}
+
+- (void)rightBarButtonClick:(UIButton *)sender {
+    [LPActionSheet showActionSheetWithTitle:nil
+                          cancelButtonTitle:@"取消"
+                     destructiveButtonTitle:nil
+                          otherButtonTitles:@[@"拍照", @"从手机相册选择"]
+                                    handler:^(LPActionSheet *actionSheet, NSInteger index) {
+                                        NSLog(@"%ld", index);
+                                        
+                                        if (index == 1) {
+                                            [self pickerImageFromCamera];
+                                        }else if(index == 2) {
+                                            [self pickerImageFromPhotoLibrary];
+                                        }
+                                    }];
+}
+
+- (void)AddHeadImage {
+    
+    self.HeadImage = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, Screen_W, 392*YZAdapter)];
+    
+//    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+//    
+//    if (![YZUtil isBlankString:model.face]) {
+//        
+//        _HeadImage.image = [self getImageFromURL:model.face];
+//        
+////        [_HeadImage sd_setImageWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"%@", model.face]] placeholderImage:nil];
+////        [[SDImageCache sharedImageCache] setValue:nil forKey:@"memCache"];
+//    }else {
+//        _HeadImage.image = [UIImage imageNamed:@"HeadBigImage"];
+//    }
+    
+    _HeadImage.userInteractionEnabled = YES;
+    [self.view addSubview:_HeadImage];
+    
+//    self.previewer = [[CYPhotoPreviewer alloc] init];
+//    [_previewer previewFromImageView:self.HeadImage inContainer:self.view];
+}
+
+
+
+
+
+// 使用相机获取图片
+- (void)pickerImageFromCamera {
+    // 判断摄像头是否可以使用(后置)
+    BOOL isAvalable = [UIImagePickerController isCameraDeviceAvailable:UIImagePickerControllerCameraDeviceRear];
+    
+    if (!isAvalable) {
+        //        NSLog(@"后置摄像头不可用");
+        return;
+    }
+    
+    UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+    
+    // 设置图片的来源
+    /*
+     UIImagePickerControllerSourceTypePhotoLibrary, // 显示所有的图片来源
+     UIImagePickerControllerSourceTypeCamera, // 显示摄像头中拍摄的照片
+     UIImagePickerControllerSourceTypeSavedPhotosAlbum // 显示相册中的图片
+     */
+    picker.sourceType = UIImagePickerControllerSourceTypeCamera;
+    // 允不允许用户对选择的图片进行编辑
+    picker.allowsEditing = YES;
+    
+    // 设置代理属性
+    picker.delegate = self;
+    
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+// 代理方法
+// 选择好图片之后这个方法就会触发
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+    
+    // info中存储的就是我们想要的图片资源
+    self.HeadImage.image = [info objectForKey:UIImagePickerControllerEditedImage];
+    
+    if (picker.sourceType == UIImagePickerControllerSourceTypeCamera)
+    {
+        //如果采自于摄像头（注意模拟器产生异常）
+        
+    }
+    
+    //    [self scaleImage:self.PersonalViewCell.NameImage.image toScale:0.01];
+    
+    UIGraphicsBeginImageContext(CGSizeMake(self.HeadImage.image.size.width*0.8,self.HeadImage.image.size.height*0.8));
+    [self.HeadImage.image drawInRect:CGRectMake(0,0, self.HeadImage.image.size.width*0.8, self.HeadImage.image.size.height*0.8)];
+    self.HeadImage.image =UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    NSData* imageData = UIImagePNGRepresentation(self.HeadImage.image);
+    NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString* documentsDirectory = [paths objectAtIndex:0];
+    // Now we get the full path to the file
+    NSString* fullPathToFile = [documentsDirectory stringByAppendingPathComponent:@"touxiang"];
+    // and then we write it out
+    [imageData writeToFile:fullPathToFile atomically:NO];
+    
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    
+#pragma mark - 上传选择的图片
+//    [_delegate passValue:self.HeadImage.image];
+    
+    // Now we get the full path to the file
+    self.fullPathToFile = [documentsDirectory stringByAppendingPathComponent:@"jpgImage"];
+    [imageData  writeToFile:self.fullPathToFile atomically:NO];
+    uint64_t fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:self.fullPathToFile error:nil] fileSize];
+    NSString *filesize =  [NSString stringWithFormat:@"JPG format file size: %.2f KB at %.f%% quality", (double)fileSize/1024, 100.0];
+    DLog(@"-=-=-=-=============%@========", filesize);
+    
+    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+    NSString* filepath = self.fullPathToFile;
+    NSDictionary* param1 = @{@"uid":model.uid,@"token":model.token};
+
+    AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+    manager.requestSerializer.timeoutInterval = 6;
+    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"text/plain", @"multipart/form-data", @"application/json", @"text/html", @"image/jpeg", @"image/png", @"application/octet-stream", @"text/json", nil];
+    
+    [manager POST:USER_FACE parameters:param1 constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+        
+        //文件部分
+        NSString *filename = [filepath lastPathComponent];
+        [formData appendPartWithFileData:imageData name:@"uploadfile" fileName:[filename stringByAppendingString:@".jpg"] mimeType:@"image/jpeg"];
+        LKWaitBubble(@"保存中...");
+        
+    } progress:^(NSProgress * _Nonnull uploadProgress) {
+        
+    } success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+
+        DLog(@"responseObject == %@", responseObject);
+        NSString * code = responseObject[@"code"];
+        if ([code integerValue] == 0) {
+        
+            [_previewer previewFromImageView:self.HeadImage inContainer:self.view];
+            LKRightBubble(@"保存成功", 1);
+#pragma mark - 将用户头像存储到本地, 更换用户信息
+            YZUserInfoModel *NewModel = [[YZUserInfoManager sharedManager] currentUserInfo];
+            
+            NewModel.face_url = responseObject[@"data"][@"face_uri"];
+            NewModel.face_min_url = responseObject[@"data"][@"face_min_uri"];
+            NewModel.face = [self getImageFromURL:responseObject[@"data"][@"face_uri"]];
+            NewModel.face_min = [self getImageFromURL:responseObject[@"data"][@"face_min_uri"]];
+            
+            [[YZUserInfoManager sharedManager] resetUserInfoWithUserInfo:NewModel];
+            
+        }else if ([code integerValue] == 900102) {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"登录信息失效"];
+            
+        }else if ([code integerValue] == 106001) {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"登录失效"];
+            
+        }else if ([code integerValue] == 106002) {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"上传的图片无法获取"];
+            
+        }else if ([code integerValue] == 106003) {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"图片类型不正确"];
+            
+        }else if ([code integerValue] == 106004) {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"图片上传失败"];
+            
+        }else if ([code integerValue] == 106005) {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"头像写入数据库出错"];
+            
+        }else {
+            // 关闭进度加载页面
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"发送失败, 请重试"];
+        }
+        
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        // 关闭进度加载页面
+//        LKHideBubble();
+        
+        LKErrorBubble(@"保存失败", 1);
+        
+        DLog(@"发送失败%@", error);
+            // 关闭进度加载页面
+//        [MBProgressHUD showAutoMessage:@"保存失败, 请检查您的网络连接"];
+    }];
+    
+}
+
+-(UIImage *) getImageFromURL:(NSString *)fileURL {
+    
+    NSLog(@"执行图片下载函数");
+    
+    UIImage * result;
+    
+    NSData * data = [NSData dataWithContentsOfURL:[NSURL URLWithString:fileURL]];
+    
+    result = [UIImage imageWithData:data];
+    
+    return result;
+}
+
+// 压缩图片
+//- (UIImage *)scaleImage:(UIImage *)image toScale:(float)scaleSize
+//{
+//    UIGraphicsBeginImageContext(CGSizeMake(image.size.width*scaleSize,image.size.height*scaleSize));
+//    [image drawInRect:CGRectMake(0,0, image.size.width * scaleSize, image.size.height *scaleSize)];
+//    UIImage *scaledImage =UIGraphicsGetImageFromCurrentImageContext();
+//    UIGraphicsEndImageContext();
+//    //    NSLog(@"%@",NSStringFromCGSize(scaledImage.size));
+//    return scaledImage;
+//}
+
+
+
+
+
+// 从相册中获取图片
+- (void)pickerImageFromPhotoLibrary {
+    // 图片选择视图控制器
+    UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+    // 图片来源
+    picker.sourceType = UIImagePickerControllerSourceTypeSavedPhotosAlbum;
+    // 是否允许编辑
+    picker.allowsEditing = YES;
+    // 设置代理
+    picker.delegate = self;
+    // 模态出视图
+    [self presentViewController:picker animated:YES completion:nil];
+    
+}
+
+- (void)saveImage:(UIImage *)tempImage WithName:(NSString *)imageName{
+    NSData *imageData = UIImagePNGRepresentation(tempImage);
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+    // Now we get the full path to the file
+    NSString *fullPathToFile = [documentsDirectory stringByAppendingPathComponent:imageName];
+    // and then we write it out
+    [imageData writeToFile:fullPathToFile atomically:NO];
+}
+
+- (NSString *)documentFolderPath{
+    //    NSLog(@"=====Pppop%@", [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"]);
+    return [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+    
+}
+
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

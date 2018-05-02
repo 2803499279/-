@@ -1,0 +1,405 @@
+//
+//  YZAddBankViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/5/6.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZAddBankViewController.h"
+#import "YZBankViewController.h"
+#import "UITextField+ExtentRange.h"
+
+@interface YZAddBankViewController () <YZBankViewControllerDelegate, UITextFieldDelegate>
+
+@property (nonatomic, strong) UITextField *bank;
+@property (nonatomic, strong) UITextField *money;
+@property (nonatomic, strong) NSString *BankID;
+
+@end
+
+@implementation YZAddBankViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = BackGround_Color;
+    // 设置导航栏
+    [self customPushViewControllerNavBarTitle:@"添加银行卡" backGroundImageName:nil];
+    // 添加控件
+    [self EditPage];
+    
+    [self customerGesturePop];
+}
+
+#pragma mark - Private Method 右划返回上一个页面
+- (void)customerGesturePop {
+    UISwipeGestureRecognizer *swipeGestuer2 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleOtherSwipeGesture)];
+    swipeGestuer2.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:swipeGestuer2];
+}
+
+- (void) handleOtherSwipeGesture {
+    
+    [self.bank resignFirstResponder];
+    [self.money resignFirstResponder];
+    [super goBack];
+//    [self.navigationController popViewControllerAnimated:YES];
+}
+
+- (void)goBack {
+    
+    [self.bank resignFirstResponder];
+    [self.money resignFirstResponder];
+    [super goBack];
+//    [self.navigationController popViewControllerAnimated:YES];
+}
+
+#pragma mark - 添加控件
+- (void)EditPage {
+    
+    // 用户姓名
+    UIView *RealNameView = [[UIView alloc] initWithFrame:CGRectMake(0, 20*YZAdapter, Screen_W, 45*YZAdapter)];
+    RealNameView.backgroundColor = WhiteColor;
+    
+    UILabel *RealNameLabel = [[UILabel alloc] initWithFrame:CGRectMake(15*YZAdapter, 0, 70*YZAdapter, 45*YZAdapter)];
+    RealNameLabel.text = @"真实姓名";
+    RealNameLabel.textColor = MainFont_Color;
+    RealNameLabel.font = FONT(16);
+    [RealNameView addSubview:RealNameLabel];
+    
+    UILabel *RealName = [[UILabel alloc] initWithFrame:CGRectMake(Screen_W - 215*YZAdapter, 0*YZAdapter, 205*YZAdapter, 45*YZAdapter)];
+    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+    RealName.text = model.realname;
+    RealName.font = FONT(16);
+    RealName.textAlignment = NSTextAlignmentRight;
+    RealName.textColor = TimeFont_Color;
+    [RealNameView addSubview:RealName];
+    [self.view addSubview:RealNameView];
+    
+    // 所属银行
+    UIButton *NickNameView = [UIButton buttonWithType:UIButtonTypeCustom];
+    NickNameView.frame = CGRectMake(0, 85*YZAdapter, Screen_W, 45*YZAdapter);
+    [NickNameView setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    NickNameView.backgroundColor = WhiteColor;
+    
+    UILabel *NickNameLabel = [[UILabel alloc] initWithFrame:CGRectMake(15*YZAdapter, 0, 70*YZAdapter, 45*YZAdapter)];
+    NickNameLabel.text = @"所属银行";
+    NickNameLabel.textColor = MainFont_Color;
+    NickNameLabel.font = FONT(16);
+    [NickNameView addSubview:NickNameLabel];
+    
+    self.bank = [[UITextField alloc] initWithFrame:CGRectMake(Screen_W - 215*YZAdapter, 0*YZAdapter, 165*YZAdapter, 45*YZAdapter)];
+    self.bank.placeholder = @"选择所属银行";
+    self.bank.font = FONT(16);
+    [self.bank addTarget:self action:@selector(handleTapGesture:) forControlEvents:UIControlEventTouchDown];
+    self.bank.textAlignment = NSTextAlignmentRight;
+    self.bank.textColor = MainFont_Color;
+    [NickNameView addSubview:self.bank];
+    
+    UIImageView *InstitutionsImage = [[UIImageView alloc] initWithFrame:CGRectMake(Screen_W - 30*YZAdapter, 14*YZAdapter, 7*YZAdapter, 16*YZAdapter)];
+    InstitutionsImage.image = [UIImage imageNamed:@"YZFH"];
+    [NickNameView addSubview:InstitutionsImage];
+    [self.view addSubview:NickNameView];
+    
+    
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+    tapGesture.numberOfTapsRequired = 1;
+    tapGesture.numberOfTouchesRequired = 1;
+    [NickNameView addGestureRecognizer:tapGesture];
+    [self.view addSubview:NickNameView];
+    
+    // 银行卡号
+    UIView *NameView = [[UIView alloc] initWithFrame:CGRectMake(0, 150*YZAdapter, Screen_W, 45*YZAdapter)];
+    NameView.backgroundColor = WhiteColor;
+    
+    UILabel *NameLabel = [[UILabel alloc] initWithFrame:CGRectMake(15*YZAdapter, 0, 70*YZAdapter, 45*YZAdapter)];
+    NameLabel.text = @"银行卡号";
+    NameLabel.textColor = MainFont_Color;
+    NameLabel.font = FONT(16);
+    [NameView addSubview:NameLabel];
+    
+    self.money = [[UITextField alloc] initWithFrame:CGRectMake(Screen_W - 215*YZAdapter, 0*YZAdapter, 205*YZAdapter, 45*YZAdapter)];
+    self.money.font = FONT(16);
+    self.money.placeholder = @"请输入银行卡号";
+    self.money.delegate = self;
+    self.money.keyboardType = UIKeyboardTypePhonePad;
+    self.money.textAlignment = NSTextAlignmentRight;
+    self.money.textColor = MainFont_Color;
+    [NameView addSubview:self.money];
+    [self.view addSubview:NameView];
+    
+//    // 可用余额
+//    UILabel *GenderLabel = [[UILabel alloc] initWithFrame:CGRectMake(13*YZAdapter, 64+120*YZAdapter, 300*YZAdapter, 17*YZAdapter)];
+//    GenderLabel.text = @"可用余额 0.00元";
+//    GenderLabel.textColor = TimeFont_Color;
+//    GenderLabel.font = FONT(12);
+//    [self.view addSubview:GenderLabel];
+//    
+//    // 预计2个工作日到账
+//    UILabel *Gender = [[UILabel alloc] initWithFrame:CGRectMake(0, 64+205*YZAdapter, Screen_W, 17*YZAdapter)];
+//    Gender.font = FONT(12);
+//    Gender.text = @"预计2个工作日到账";
+//    Gender.textAlignment = NSTextAlignmentCenter;
+//    Gender.textColor = TimeFont_Color;
+//    [self.view addSubview:Gender];
+    
+    UIView *PView = [[UIView alloc] initWithFrame:CGRectMake(0, Screen_H-69*YZAdapter-64, Screen_W, 1*YZAdapter)];
+    PView.backgroundColor = LightLine_Color;
+    [self.view addSubview:PView];
+    
+    UIView *PhoneView = [[UIView alloc] initWithFrame:CGRectMake(0, Screen_H-68*YZAdapter-64, Screen_W, 68*YZAdapter)];
+    PhoneView.backgroundColor = BackGround_Color;
+    
+    
+    UIButton *ExitBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [ExitBtn  setExclusiveTouch :YES];
+    ExitBtn.tintColor = [UIColor whiteColor];
+    ExitBtn.frame = CGRectMake(14*YZAdapter, 14*YZAdapter, Screen_W-28*YZAdapter, 42*YZAdapter);
+    [ExitBtn setTitle:@"添   加" forState:UIControlStateNormal];
+    // 高亮状态
+    [ExitBtn setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [ExitBtn setTitleColor:TimeMainFont_Color forState:(UIControlStateHighlighted)];
+    // 正常状态
+    //    [ExitBtn setImage:[UIImage imageNamed:@"green-1"] forState:UIControlStateNormal];
+    
+//    [ExitBtn setTintColor:WhiteColor];
+    ExitBtn.layer.cornerRadius = 2.0*YZAdapter;
+    ExitBtn.backgroundColor = NewGreenButton_Color;
+    [ExitBtn addTarget:self action:@selector(handdleExitBtn) forControlEvents:UIControlEventTouchUpInside];
+    ExitBtn.titleLabel.font = FONT(15);
+    [PhoneView addSubview:ExitBtn];
+    [self.view addSubview:PhoneView];
+    
+//    // 添加
+//    UIView *BornDateView = [[UIView alloc] initWithFrame:CGRectMake(0, 215*YZAdapter, Screen_W, 45*YZAdapter)];
+//    BornDateView.backgroundColor = BackGround_Color;
+//    
+//    UIButton *ExitBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+//    [ExitBtn  setExclusiveTouch :YES];
+//    ExitBtn.frame = CGRectMake(10*YZAdapter, 0, Screen_W-20*YZAdapter, 45*YZAdapter);
+//    [ExitBtn setTitle:@"添   加" forState:UIControlStateNormal];
+//    ExitBtn.tintColor = [UIColor whiteColor];
+//    // 高亮状态
+//    [ExitBtn setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+//    // 正常状态
+////    [ExitBtn setImage:[UIImage imageNamed:@"green-1"] forState:UIControlStateNormal];
+//    //    ExitBtn.layer.cornerRadius = 5;
+//    //    ExitBtn.layer.masksToBounds = YES;
+//    ExitBtn.backgroundColor = Yellow_Color;
+//    [ExitBtn addTarget:self action:@selector(handdleExitBtn) forControlEvents:UIControlEventTouchUpInside];
+//    ExitBtn.titleLabel.font = FONT(16);
+//    
+//    [BornDateView addSubview:ExitBtn];
+//    [self.view addSubview:BornDateView];
+    
+}
+
+// 实现协议中的方法
+- (void)bankImage:(NSString *)baimage bankLabel:(NSString *)label {
+    self.bank.text = label;
+}
+
+
+// 选择银行卡
+- (void)handleTapGesture:(UIButton *)sender {
+    YZBankViewController *YZBankController = [YZBankViewController new];
+    YZBankController.delegate = self;
+    YZBankController.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:YZBankController animated:YES];
+}
+
+
+
+
+#pragma mark - 添加
+- (void) handdleExitBtn {
+    
+    if ([self.money.text noWhiteSpaceString].length >= 16) {
+        YZALLService *WALLET_ADDCARDRequest = [YZALLService zwb_requestWithUrl:WALLET_ADDCARD isPost:YES];
+        
+        if ([self.bank.text isEqualToString:@"邮储银行"]) {
+            self.BankID = @"PSBC";
+        }else if ([self.bank.text isEqualToString:@"民生银行"]) {
+            self.BankID = @"CMBC";
+        }else if ([self.bank.text isEqualToString:@"平安银行"]) {
+            self.BankID = @"SDB";
+        }else if ([self.bank.text isEqualToString:@"中国银行"]) {
+            self.BankID = @"BOC";
+        }else if ([self.bank.text isEqualToString:@"建设银行"]) {
+            self.BankID = @"CCB";
+        }else if ([self.bank.text isEqualToString:@"光大银行"]) {
+            self.BankID = @"CEB";
+        }else if ([self.bank.text isEqualToString:@"华夏银行"]) {
+            self.BankID = @"HXB";
+        }else if ([self.bank.text isEqualToString:@"浦发银行"]) {
+            self.BankID = @"SPDB";
+        }else if ([self.bank.text isEqualToString:@"农业银行"]) {
+            self.BankID = @"ABC";
+        }else if ([self.bank.text isEqualToString:@"工商银行"]) {
+            self.BankID = @"ICBC";
+        }else if ([self.bank.text isEqualToString:@"北京银行"]) {
+            self.BankID = @"BCCB";
+        }else if ([self.bank.text isEqualToString:@"兴业银行"]) {
+            self.BankID = @"CIB";
+        }else if ([self.bank.text isEqualToString:@"交通银行"]) {
+            self.BankID = @"BOCM";
+        }else if ([self.bank.text isEqualToString:@"上海银行"]) {
+            self.BankID = @"SHBANK";
+        }else if ([self.bank.text isEqualToString:@"中信银行"]) {
+            self.BankID = @"CITIC";
+        }else if ([self.bank.text isEqualToString:@"广发银行"]) {
+            self.BankID = @"GDB";
+        }else if ([self.bank.text isEqualToString:@"招商银行"]) {
+            self.BankID = @"CMB";
+        }
+        
+        WALLET_ADDCARDRequest.bank = self.BankID;
+        WALLET_ADDCARDRequest.cardno = self.money.text;
+        
+        WeakSelf(self);
+        [WALLET_ADDCARDRequest zwb_sendRequestWithCompletion:^(id responseObject, BOOL success, NSString *message) {
+            DLog(@"%@", message);
+            if (success) {
+                DLog(@"return success:%@", responseObject);
+                NSString * code = responseObject[@"code"];
+                if ([code integerValue] == 0) {
+                    LKRightBubble(@"银行卡添加成功", 2);
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"银行卡添加成功" BubbleImage:@"YZPromptSubmit"], 1);
+                    [self.bank resignFirstResponder];
+                    [self.money resignFirstResponder];
+//                    [self.navigationController popViewControllerAnimated:YES];
+                    [super goBack];
+                }else if ([code integerValue] == 900102) {
+                    [MBProgressHUD showAutoMessage:@"登录信息失效"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"登录信息失效" BubbleImage:@"YZPromptSubmit"], 1);
+                    
+                    YZLoginViewController * vc = [[YZLoginViewController alloc]init];
+                    YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+                    vc.AlertPhone = model.Usre_Phone;
+                    vc.hidesBottomBarWhenPushed = YES;
+                    [[YZUserInfoManager sharedManager] didLoginOut];
+                    [weakSelf.navigationController pushViewController:vc animated:YES];
+                    
+                }else if ([code integerValue] == 213001) {
+                    [MBProgressHUD showAutoMessage:@"所属银行无效"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"所属银行无效" BubbleImage:@"YZPromptSubmit"], 1);
+                }else if ([code integerValue] == 213002) {
+                    [MBProgressHUD showAutoMessage:@"银行卡号无效"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"银行卡号无效" BubbleImage:@"YZPromptSubmit"], 1);
+                    
+                }else if ([code integerValue] == 213003) {
+                    [MBProgressHUD showAutoMessage:@"银行卡号已添加"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"银行卡号已添加" BubbleImage:@"YZPromptSubmit"], 1);
+                }
+            } else {
+                DLog(@"return failure");
+                [MBProgressHUD showAutoMessage:@"添加失败, 请检查您的网络连接"];
+//                LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"添加失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+            }
+        } failure:^(NSError *error) {
+            DLog(@"error == %@", error);
+            [MBProgressHUD showAutoMessage:@"添加失败, 请检查您的网络连接"];
+//            LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"添加失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+        }];
+
+    }else {
+        [MBProgressHUD showAutoMessage:@"银行卡号无效"];
+//        LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"银行卡号无效" BubbleImage:@"YZPromptSubmit"], 1);
+    }
+    
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    
+    [self.bank resignFirstResponder];
+    [self.money resignFirstResponder];
+    
+}
+
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    //拿到为改变前的字符串
+    NSString *text = [textField text];
+    //键入字符集，\b标示删除键
+    NSCharacterSet *characterSet = [NSCharacterSet characterSetWithCharactersInString:@"0123456789\b"];
+    //对当前键入字符进行空格过滤
+    string = [string stringByReplacingOccurrencesOfString:@" " withString:@""];
+    //invertedSet会对当前结果集取反，检查当前键入字符是否在字符集合中，如果不在则直接返回NO 不改变textField值
+    if ([string rangeOfCharacterFromSet:[characterSet invertedSet]].location != NSNotFound) {
+        return NO;
+    }
+    //增加当前键入字符在改变前的字符串尾部
+    text = [text stringByReplacingCharactersInRange:range withString:string];
+    //再次确认去掉字符串中空格
+    text = [text stringByReplacingOccurrencesOfString:@" " withString:@""];
+    //初始化字符用来保存格式化后的字符串
+    NSString *newString = @"";
+    //while中对text进行格式化
+    while (text.length > 0) {
+        //按4位字符进行截取，如果当前字符不足4位则按照当前字符串的最大长度截取
+        NSString *subString = [text substringToIndex:MIN(text.length, 4)];
+        //将截取后的字符放入需要格式化的字符串中
+        newString = [newString stringByAppendingString:subString];
+        if (subString.length == 4) {
+            //截取的字符串长度满4位则在后面增加一个空格符
+            newString = [newString stringByAppendingString:@" "];
+        }
+        //将text中截取掉字符串去掉
+        text = [text substringFromIndex:MIN(text.length, 4)];
+    }
+    //再次确认过滤掉除指定字符以外的字符
+    newString = [newString stringByTrimmingCharactersInSet:[characterSet invertedSet]];
+    //国内银行卡一般为16~19位 格式化后增加4个空格 也就是最多23个字符
+    if (newString.length > 23) {
+        return NO;
+    }
+    //手动对textField赋值
+    [textField setText:newString];
+    
+    NSRange range2 = textField.selectedRange;
+    
+    NSLog(@"%lu and %lu", (unsigned long)range2.location, (unsigned long)range2.length);
+    
+    //返回NO 则不通过委托自动往当前字符后面增加字符，达到格式化效果
+    return NO;
+}
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField {
+    NSRange range2 = textField.selectedRange;
+    
+    NSLog(@"%lu and %lu", (unsigned long)range2.location, (unsigned long)range2.length);
+}
+
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+//    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+//    self.tabBarController.tabBar.hidden = NO;
+    
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

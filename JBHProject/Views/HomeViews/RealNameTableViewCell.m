@@ -1,0 +1,88 @@
+//
+//  RealNameTableViewCell.m
+//  JBHProject
+//
+//  Created by 李俊恒 on 2017/5/8.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "RealNameTableViewCell.h"
+@interface RealNameTableViewCell()
+@property(nonatomic,strong)UIView * backGroundView;// 背景图
+@property(nonatomic,strong)UILabel * contentLabel;// 描述
+@property(nonatomic,strong)UIImageView * setImageView;// 设置的图片
+@property(nonatomic,strong)UIImageView * pushImageView;// 箭头
+@end
+
+@implementation RealNameTableViewCell
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
+{
+    if (self = [super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
+        _backGroundView = [[UIView alloc]init];
+        _contentLabel = [[UILabel alloc]init];
+        _setImageView = [[UIImageView alloc]init];
+        _pushImageView = [[UIImageView alloc]init];
+        
+        [_backGroundView addSubview:_contentLabel];
+        [_backGroundView addSubview:_setImageView];
+        [_backGroundView addSubview:_pushImageView];
+        
+        [self addSubview:_backGroundView];
+        self.backgroundColor = YZBackNavColor;
+        [self setUI];
+    }
+    return self;
+}
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    [_backGroundView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(self).offset(20*Size_ratio);
+        make.left.equalTo(self).offset(10*Size_ratio);
+        make.right.equalTo(self).offset(-10*Size_ratio);
+        make.bottom.equalTo(self).offset(0*Size_ratio);
+    }];
+    
+    [_setImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(_backGroundView).offset(12.5*Size_ratio);
+        make.left.equalTo(_backGroundView).offset(15*Size_ratio);
+        make.height.mas_equalTo(22.5*Size_ratio);
+        make.width.mas_equalTo(22.5*Size_ratio);
+    }];
+    
+    [_contentLabel mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(_backGroundView).offset(10*Size_ratio);
+        make.left.equalTo(_backGroundView).offset(55*Size_ratio);
+        make.height.mas_equalTo(30*Size_ratio);
+        make.width.mas_equalTo(150*Size_ratio);
+    }];
+    
+    [_pushImageView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.top.equalTo(_backGroundView).offset(12.5*Size_ratio);
+        make.right.equalTo(_backGroundView).offset(-20*Size_ratio);
+        make.width.mas_equalTo(20*Size_ratio);
+        make.height.mas_equalTo(22.5*Size_ratio);
+    }];
+
+}
+
+#pragma mark ----------- Fucation
+- (void)setUI{
+    _backGroundView.backgroundColor = [UIColor whiteColor];
+    _backGroundView.layer.cornerRadius = 10*Size_ratio;
+    _contentLabel.font = [UIFont systemFontOfSize:16*Size_ratio];
+}
+- (void)setRealNamemodel:(RealNameModel *)realNamemodel
+{
+    _realNamemodel = realNamemodel;
+    _contentLabel.text = _realNamemodel.contentStr;
+//    if ([_realNamemodel.contentStr isEqualToString:@"请先进行实名认证"]) {
+//        _contentLabel.textColor = [UIColor jhUserInfoBlack];
+//    }else{
+        _contentLabel.textColor = [UIColor jhUserInfoBlack];
+//    }
+    _setImageView.image = [UIImage imageNamed:_realNamemodel.iconImageNameStr];
+    _pushImageView.image = [UIImage imageNamed:_realNamemodel.pushImageNameStr];
+    [self layoutIfNeeded];
+}
+@end

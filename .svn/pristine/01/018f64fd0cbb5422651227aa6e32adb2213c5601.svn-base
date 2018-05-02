@@ -1,0 +1,426 @@
+//
+//  YZWalletViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/4/27.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZWalletViewController.h"
+#import "YZWalletViewCell.h"
+#import "YZWalletModel.h"
+#import "YZBankListViewController.h"
+// 提现
+#import "YZWithdrawalViewController.h"
+
+@interface YZWalletViewController () <UITableViewDataSource, UITableViewDelegate>
+{
+    UILabel *prompt;
+    UIButton *withdrawal;
+}
+
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) NSMutableArray *dataArray; // 钱包信息数据集合
+@property(nonatomic,strong)UIButton * rightButton;
+@property(nonatomic,strong)UILabel *money;
+@property (nonatomic) NSInteger page;
+
+@end
+
+@implementation YZWalletViewController
+
+#pragma mark - Lazyload
+- (NSMutableArray *)dataArray {
+    if (!_dataArray) {
+        _dataArray = [[NSMutableArray alloc] init];
+    }
+    return _dataArray;
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden = NO;
+//    self.tabBarController.tabBar.hidden = YES;
+
+    // 数据请求钱包记录
+//    [self WALLET_LOGRequest];
+    // 数据请求钱包信息
+    [self WALLET_INFORequest];
+    [self WALLET_LOGRequest:YES];
+    
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+//    self.tabBarController.tabBar.hidden = NO;
+    
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    // 设置导航栏
+    [self customPushViewControllerNavBarTitle:@"我的钱包" backGroundImageName:nil];
+    self.view.backgroundColor = BackGround_Color;
+    
+    // 创建UITableView,注册cell
+    [self establishUITableViewAndCell];
+    
+    [self customerGesturePop];
+    
+    [self addNavigationBarRightButton];// 添加右边银行卡按钮
+    // 刷新
+    self.page = 1;
+    // 数据请求
+    [self loadData];
+    
+    self.tableView.delaysContentTouches = NO;
+    // 该方式相当于上面两个循环的合集，并且实现方式更加优雅，推荐使用它，而不是使用上面两个循环
+    for (id obj in self.tableView.subviews) {
+        if ([obj respondsToSelector:@selector(setDelaysContentTouches:)]) {
+            [obj setDelaysContentTouches:NO];
+        }
+    }
+    
+}
+- (void)loadData {
+    WeakSelf(self);
+    self.tableView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        [weakSelf WALLET_LOGRequest:YES];
+        [weakSelf.tableView.mj_header endRefreshing];
+    }];
+    //    [self.tableView.mj_header beginRefreshing];
+    self.tableView.mj_footer = [MJRefreshBackNormalFooter footerWithRefreshingBlock:^{
+        [weakSelf WALLET_LOGRequest:NO];
+        [weakSelf.tableView.mj_footer endRefreshing];
+    }];
+}
+
+- (UIButton *)rightButton
+{
+    if (_rightButton == nil) {
+        _rightButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [_rightButton  setExclusiveTouch :YES];
+        [_rightButton setFrame:CGRectMake(0, 0, 60*Size_ratio, 30*Size_ratio)];
+        [_rightButton setTitle:@"银行卡" forState:UIControlStateNormal];
+        _rightButton.tintColor = MainFont_Color;
+        [_rightButton addTarget:self action:@selector(rightBarButtonClick:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _rightButton;
+}
+
+- (void)addNavigationBarRightButton
+{
+    UIBarButtonItem * rightItem = [[UIBarButtonItem alloc]initWithCustomView:self.rightButton];
+    self.navigationItem.rightBarButtonItem = rightItem;
+}
+
+- (void)rightBarButtonClick:(UIButton *)sender
+{
+    YZBankListViewController * YZBankListController = [[YZBankListViewController alloc]init];
+    YZBankListController.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:YZBankListController animated:YES];
+}
+
+- (void)goBack
+{
+    [super goBack];
+    if (_isHomePush) {
+        
+    }else{
+    [self.view endEditing:YES];
+//    [self.frostedViewController.view endEditing:YES];
+//    // Present the view controller
+//    [self.frostedViewController presentMenuViewController];
+    }
+}
+#pragma mark - Private Method 右划返回上一个页面
+- (void)customerGesturePop {
+    UISwipeGestureRecognizer *swipeGestuer2 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleOtherSwipeGesture)];
+    swipeGestuer2.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:swipeGestuer2];
+}
+- (void) handleOtherSwipeGesture {
+    if (self.isHomePush) {
+        [super goBack];
+//        [self.navigationController popViewControllerAnimated:YES];
+    }else {
+        
+        [self.view endEditing:YES];
+        [super goBack];
+//        [self.frostedViewController.view endEditing:YES];
+//        // Present the view controller
+//        [self.frostedViewController presentMenuViewController];
+        
+    }
+}
+
+
+#pragma marh - 创建UITableView,注册cell
+- (void)establishUITableViewAndCell {
+    // 创建UITableView
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, Screen_W, Screen_H-30) style:(UITableViewStyleGrouped)];
+    
+    // 注册cell
+    [self.tableView registerClass:[YZWalletViewCell class] forCellReuseIdentifier:@"YZWalletViewCell"];
+    
+    self.tableView.backgroundColor = BackGround_Color;
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+//    self.tableView.bounces = NO;
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    
+    [self.view addSubview:self.tableView];
+}
+
+
+#pragma mark - UITableViewDataSource代理方法
+// 返回tabelView中section(分区)的个数
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    
+    return 1;
+}
+// 返回每个分区中cell的个数
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.dataArray.count;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    YZWalletViewCell *YZWalletVC = [tableView dequeueReusableCellWithIdentifier:@"YZWalletViewCell" forIndexPath:indexPath];
+    
+    YZWalletVC.selectionStyle = UITableViewCellSelectionStyleNone;
+
+    if (self.dataArray.count != 0) {
+        
+        YZWalletModel *WalletModel = self.dataArray[indexPath.row];
+        
+        [YZWalletVC setValueForSubViewsByAction:WalletModel];
+    }
+    
+    
+    return YZWalletVC;
+}
+
+// 去掉cell左侧空白
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
+        [cell setSeparatorInset:UIEdgeInsetsZero];
+    }
+    if ([cell respondsToSelector:@selector(setLayoutMargins:)]) {
+        [cell setLayoutMargins:UIEdgeInsetsZero];
+    }
+}
+
+// 返回cell的高度
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    return 52*YZAdapter;
+}
+
+// 设置表头高度
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+    return 140*YZAdapter;
+}
+
+//添加标头中的内容
+-(UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section{
+    
+    UIView *headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, Screen_W, 120*YZAdapter)];
+    headerView.backgroundColor = [UIColor whiteColor];
+    
+    UIView *hView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, Screen_W, 20*YZAdapter)];
+    hView.backgroundColor = BackGround_Color;
+    [headerView addSubview:hView];
+    
+    prompt = [[UILabel alloc] initWithFrame:CGRectMake(20*YZAdapter, 35*YZAdapter, 200*YZAdapter, 14*YZAdapter)];
+    prompt.font = FONT(14);
+    prompt.text = @"钱包余额 (元)";
+    prompt.textColor = TimeFont_Color;
+    [headerView addSubview:prompt];
+    
+    self.money = [[UILabel alloc] initWithFrame:CGRectMake(20*YZAdapter, 60*YZAdapter, 200*YZAdapter, 42*YZAdapter)];
+    self.money.font = FONT(40);
+    // 1. 把他写入Documents文件夹下的text.txt (在Documents下 添加一个 text.txt 文件)
+    NSString *textPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"text.txt"];
+    // 2. 从文件中读取字符串
+    NSString *readString = [NSString stringWithContentsOfFile:textPath encoding:NSUTF8StringEncoding error:nil];
+    self.money.textColor = MainFont_Color;
+    [headerView addSubview:self.money];
+    
+    withdrawal = [UIButton buttonWithType:UIButtonTypeSystem];
+    [withdrawal  setExclusiveTouch :YES];
+    withdrawal.frame = CGRectMake(Screen_W-130*YZAdapter, 55*YZAdapter, 100*YZAdapter, 30*YZAdapter);
+    [withdrawal setTitle:@"提 现" forState:UIControlStateNormal];
+//    withdrawal.tintColor = MainFont_Color;
+    [withdrawal setTintColor:MainFont_Color];
+    // 高亮状态
+    [withdrawal setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    // 正常状态
+//    [withdrawal setImage:[UIImage imageNamed:@"green-1"] forState:UIControlStateNormal];
+    [withdrawal addTarget:self action:@selector(handleWithdrawal) forControlEvents:UIControlEventTouchUpInside];
+    withdrawal.titleLabel.font = FONT(16);
+    
+    [withdrawal.layer setBorderWidth:1.0]; // 边框宽度
+    // 边框颜色
+    withdrawal.layer.borderColor=LightLine_Color.CGColor;
+    
+    if ([readString floatValue] > 0) {
+        self.money.text = readString;
+        withdrawal.backgroundColor = WhiteColor;
+    }else {
+        self.money.text = @"0.00";
+        withdrawal.backgroundColor = TimeFont_Color;
+    }
+    
+    [headerView addSubview:withdrawal];
+    
+    UIView *fView = [[UIView alloc] initWithFrame:CGRectMake(0, 120*YZAdapter, Screen_W, 20*YZAdapter)];
+    fView.backgroundColor = BackGround_Color;
+    [headerView addSubview:fView];
+    
+    
+    return headerView;
+}
+
+#pragma mark - 点击提现按钮
+- (void) handleWithdrawal {
+    
+    if ([self.money.text floatValue] > 0) {
+        
+        YZWithdrawalViewController * YZWithdrawalController = [[YZWithdrawalViewController alloc]init];
+        
+        YZWithdrawalController.YZMoney = self.money.text;
+        YZWithdrawalController.hidesBottomBarWhenPushed = YES;
+        [self.navigationController pushViewController:YZWithdrawalController animated:YES];
+        
+    }else {
+//        LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"余额不足" BubbleImage:@"YZPromptSubmit"], 1);
+    }
+}
+
+#pragma mark - 数据请求钱包信息
+- (void)WALLET_INFORequest {
+    
+    YZALLService *WALLET_INFORequest = [YZALLService zwb_requestWithUrl:WALLET_INFO isPost:YES];
+    
+    [WALLET_INFORequest zwb_sendRequestWithCompletion:^(id responseObject, BOOL success, NSString *message) {
+        DLog(@"%@", message);
+        if (success) {
+            DLog(@"return success:%@", responseObject);
+            NSString * code = responseObject[@"code"];
+            if ([code integerValue] == 0) {
+                
+                NSDictionary *moneyDic = responseObject[@"data"];
+                self.money.text = moneyDic[@"money"];
+                
+                // 1. 把他写入Documents文件夹下的text.txt (在Documents下 添加一个 text.txt 文件)
+                NSString *textPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"text.txt"];
+                
+                // 2. 字符串的写入
+                [moneyDic[@"money"] writeToFile:textPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+                if ([self.money.text integerValue] > 0) {
+                    withdrawal.backgroundColor = WhiteColor;
+                }else {
+                    withdrawal.backgroundColor = TimeFont_Color;
+                }
+            }else if ([code integerValue] == 900102) {
+                [MBProgressHUD showAutoMessage:@"登录信息失效"];
+                YZLoginViewController * vc = [[YZLoginViewController alloc]init];
+                YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+                vc.AlertPhone = model.Usre_Phone;
+                vc.hidesBottomBarWhenPushed = YES;
+                [[YZUserInfoManager sharedManager] didLoginOut];
+                [self.navigationController pushViewController:vc animated:YES];
+            }
+        } else {
+            DLog(@"return failure");
+            [MBProgressHUD showAutoMessage:@"请求失败, 请检查您的网络连接"];
+        }
+    } failure:^(NSError *error) {
+        DLog(@"error == %@", error);
+        [MBProgressHUD showAutoMessage:@"请求失败, 请检查您的网络连接"];
+    }];
+}
+
+#pragma mark - 数据请求钱包记录
+- (void)WALLET_LOGRequest:(BOOL)isRefresh {
+    
+    if (!isRefresh) {
+        self.page++;
+    } else {
+        self.page = 1;
+        [self.dataArray removeAllObjects];
+    }
+    
+    YZALLService *WALLET_LOGRequest = [YZALLService zwb_requestWithUrl:WALLET_LOG isPost:YES];
+    
+    WALLET_LOGRequest.page = [NSString stringWithFormat:@"%ld", (long)self.page-1];
+    
+    WeakSelf(self);
+    [WALLET_LOGRequest zwb_sendRequestWithCompletion:^(id responseObject, BOOL success, NSString *message) {
+        DLog(@"%@", message);
+        if (success) {
+            DLog(@"return sruccess:%@", responseObject);
+            NSString * code = responseObject[@"code"];
+            if ([code integerValue] == 0) {
+                NSArray *ListArray = responseObject[@"data"];
+                isRefresh ? [self.dataArray removeAllObjects] : nil;
+                
+//                if (ListArray.count == 0 && self.page>1) {
+//                    [MBProgressHUD showAutoMessage:@"我是有底线的"];
+//                }
+                
+                for (NSDictionary *listDict in ListArray) {
+                    if ([listDict allKeys].count != 0) {
+                        YZWalletModel *WalletModel = [YZWalletModel modelWithDictionary:listDict];
+                        [weakSelf.dataArray addObject:WalletModel];
+                    }
+                }
+                
+                [weakSelf.tableView reloadData];
+                
+            }else if ([code integerValue] == 900102) {
+                [MBProgressHUD showAutoMessage:@"登录信息失效"];
+//                LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"登录信息失效" BubbleImage:@"YZPromptSubmit"], 1);
+                
+                YZLoginViewController * vc = [[YZLoginViewController alloc]init];
+                YZUserInfoModel *model = [[YZUserInfoManager sharedManager] currentUserInfo];
+                vc.AlertPhone = model.Usre_Phone;
+                
+                [[YZUserInfoManager sharedManager] didLoginOut];
+                vc.hidesBottomBarWhenPushed = YES;
+                [self.navigationController pushViewController:vc animated:YES];
+            }
+        } else {
+            DLog(@"return failure");
+            [MBProgressHUD showAutoMessage:@"请求失败, 请检查您的网络连接"];
+//            LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"请求失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+        }
+    } failure:^(NSError *error) {
+        DLog(@"error == %@", error);
+        [MBProgressHUD showAutoMessage:@"请求失败, 请检查您的网络连接"];
+//        LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"请求失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+    }];
+}
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end

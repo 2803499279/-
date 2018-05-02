@@ -1,0 +1,649 @@
+//
+//  YZLoginViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/4/15.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZLoginViewController.h"
+#import "YZUserInfoManager.h"
+#import "ListeningList.h"
+#import "RegisterViewController.h"
+#import "YZForgetPasswordViewController.h"
+#import "YZAgreementViewController.h"
+
+@interface YZLoginViewController () <UITextFieldDelegate>
+
+@property (nonatomic, strong) UITextField *Phone; // 手机号
+@property (nonatomic, strong) UITextField *password; // 密码
+@property (nonatomic, assign) BOOL IDpassword; // 密码是否显示
+@property (nonatomic, strong) UIButton *Start; // 显示明码
+@property (nonatomic, strong) UIButton *AgreementButton; //同意登录
+@property (nonatomic, assign) BOOL IDAgreement; // 密码是否显示
+@property (nonatomic, strong) NSString *Aline; // 设备别名申请码
+
+@property (nonatomic, strong) UIView *OneView;
+@property (nonatomic, strong) UIView *TwoView;
+
+@end
+
+@implementation YZLoginViewController
+- (void)viewWillAppear:(BOOL)animated
+{
+    
+    _OneView.backgroundColor = MainLine_Color;
+    _TwoView.backgroundColor = MainLine_Color;
+    
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden = YES;
+    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    self.navigationController.navigationBar.hidden = NO;
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    
+    self.navigationController.navigationBar.barStyle = UIBarStyleBlack;
+    
+    self.navigationController.interactivePopGestureRecognizer.enabled = NO;// 取消滑动返回
+    self.view.backgroundColor = WhiteColor;
+
+    _IDAgreement = YES;
+    // 添加UI控件
+    [self AddUI];
+     // 添加导航条
+//    [self AddBackGround];
+    
+    //监听键盘出现和消失
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter]addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+    
+}
+
+
+
+// 添加导航条
+- (void)AddBackGround {
+    
+    UIView *OneView = [UIView new];
+    OneView.backgroundColor = BlackButton_Color;
+    [self.view addSubview:OneView];
+    
+    UILabel *BackLabel = [UILabel new];
+    BackLabel.text = @"聚保汇";
+    BackLabel.textColor = WhiteColor;
+    BackLabel.font = FONT(22);
+    BackLabel.textAlignment = NSTextAlignmentCenter;
+    [OneView addSubview:BackLabel];
+    
+    OneView.sd_layout
+    .topSpaceToView(self.view, 20)
+    .leftSpaceToView(self.view, 0)
+    .widthIs(Screen_W)
+    .heightIs(44);
+    
+    BackLabel.sd_layout
+    .topSpaceToView(OneView, (44-22*YZAdapter)/2)
+    .leftSpaceToView(OneView, (Screen_W - 69)/2)
+    .widthIs(69*YZAdapter)
+    .heightIs(22*YZAdapter);
+    
+}
+
+
+// 添加UI控件
+- (void) AddUI {
+    
+    // 背景
+    UIView *BackView = [UIView new];
+    BackView.backgroundColor = WhiteColor;
+    [self.view addSubview:BackView];
+    
+    
+    // 添加登录标题
+    UIImageView *TitleImage = [UIImageView new];
+    TitleImage.image = [UIImage imageNamed:@"logoGreen"];
+//    TitleLabel.text = @"欢迎登录";
+//    TitleLabel.font = FONTS(23);
+//    TitleLabel.textColor = MainFont_Color;
+//    TitleLabel.textAlignment = NSTextAlignmentCenter;
+    [BackView addSubview:TitleImage];
+    
+    
+    UILabel *PH = [[UILabel alloc] initWithFrame:CGRectMake(25*YZAdapter, 311*YZAdapter, 40*YZAdapter, 12*YZAdapter)];
+    PH.text = @"+ 86";
+    PH.font = FONT(14);
+    PH.textColor = YZEssentialColor;
+    [BackView addSubview:PH];
+    
+    // 手机号
+    _Phone = [UITextField new];
+//    _Phone.text = @"15637846845";
+    _Phone.placeholder = @"请输入手机号码";
+    if (![YZUtil isBlankString:self.AlertPhone]) {
+        _Phone.text = self.AlertPhone;
+    }
+    _Phone.font = FONT(14);
+    _Phone.clearButtonMode=UITextFieldViewModeAlways;
+    _Phone.textAlignment = NSTextAlignmentLeft;
+    _Phone.textColor = MainFont_Color;
+    _Phone.keyboardType = UIKeyboardTypeNumberPad;
+    _Phone.delegate = self;
+    [BackView addSubview:_Phone];
+    
+//    UIImageView *PhoneImage = [UIImageView new];
+//    PhoneImage.image = [UIImage imageNamed:@"phone"];
+//    [BackView addSubview:PhoneImage];
+    
+    // 密码
+    _password = [UITextField new];
+//    _password.text = @"123456";
+    _password.placeholder = @"请输入登录密码";
+    _password.clearButtonMode=UITextFieldViewModeAlways;
+    _password.font = FONT(14);
+    _password.secureTextEntry = YES;
+//    _password.keyboardType = UIKeyboardTypeDefault;
+    _password.textAlignment = NSTextAlignmentLeft;
+    _password.textColor = MainFont_Color;
+    _password.delegate = self;
+    [BackView addSubview:_password];
+    
+//    UIImageView *PasswordImage = [UIImageView new];
+//    PasswordImage.image = [UIImage imageNamed:@"password"];
+//    [BackView addSubview:PasswordImage];
+    
+    _Start = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_Start  setExclusiveTouch :YES];
+    [_Start setImage:[UIImage imageNamed:@"Close-your-eyes"] forState:UIControlStateNormal];
+    [_Start addTarget:self action:@selector(handleStart) forControlEvents:UIControlEventTouchUpInside];
+    [BackView addSubview:_Start];
+    
+    
+    // 忘记密码
+    UIButton *ForgetButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [ForgetButton  setExclusiveTouch :YES];
+    [ForgetButton setTitle:@"忘记密码?" forState:UIControlStateNormal];
+    [ForgetButton setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [ForgetButton setTitleColor:TimeFont_Color forState:UIControlStateNormal];
+    ForgetButton.titleLabel.font = FONT(12);
+    [ForgetButton addTarget:self action:@selector(handleForgetButton) forControlEvents:UIControlEventTouchUpInside];
+    [BackView addSubview:ForgetButton];
+
+    
+    
+    // 登录按钮
+    UIButton *LoginButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [LoginButton  setExclusiveTouch :YES];
+    [LoginButton setTitle:@"登  录" forState:UIControlStateNormal];
+    [LoginButton setTitleColor:YZEssentialColor forState:UIControlStateNormal];
+    [LoginButton setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [LoginButton setTitleColor:TimeMainFont_Color forState:(UIControlStateHighlighted)];
+    LoginButton.titleLabel.font = FONT(15);
+    LoginButton.backgroundColor = WhiteColor;
+    
+    LoginButton.layer.cornerRadius = 22.0;
+    LoginButton.layer.masksToBounds = YES;
+    [LoginButton.layer setBorderWidth:1.0]; // 边框宽度
+    // 边框颜色
+    LoginButton.layer.borderColor=YZEssentialColor.CGColor;
+    
+    [LoginButton addTarget:self action:@selector(handleLoginButton) forControlEvents:UIControlEventTouchUpInside];
+    [BackView addSubview:LoginButton];
+
+    
+    // 协议
+//    _AgreementButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//    [_AgreementButton  setExclusiveTouch :YES];
+//    [_AgreementButton setImage:[UIImage imageNamed:@"确定"] forState:UIControlStateNormal];
+//    [_AgreementButton addTarget:self action:@selector(handleAgreementButton) forControlEvents:UIControlEventTouchUpInside];
+//    [BackView addSubview:_AgreementButton];
+    
+    
+    UILabel *AgreementLabel = [UILabel new];
+    AgreementLabel.text = @"注册即代表您同意《服务标准及违约责任约定》";
+    AgreementLabel.font = FONT(10);
+    AgreementLabel.textColor = YZEssentialColor;
+    AgreementLabel.userInteractionEnabled = YES;
+    
+    NSMutableAttributedString *HighattrStr = [[NSMutableAttributedString alloc] initWithString:AgreementLabel.text];
+    
+    [HighattrStr addAttribute:NSForegroundColorAttributeName
+                        value:TimeFont_Color
+                        range:NSMakeRange(0, 8)];
+    AgreementLabel.attributedText = HighattrStr;
+    [BackView addSubview:AgreementLabel];
+    
+    // UITapGestureRecognizer
+    UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+    // 设置轻拍触发方法时需要的点击次数
+    tapGesture.numberOfTapsRequired = 1;
+    // 设置轻拍需要的手指个数
+    tapGesture.numberOfTouchesRequired = 1;
+    // 向视图对象上添加手势
+    [AgreementLabel addGestureRecognizer:tapGesture];
+    
+    // 注册
+    UIButton *RegisteredButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [RegisteredButton  setExclusiveTouch :YES];
+    [RegisteredButton setTitle:@"注册成为速勘员" forState:UIControlStateNormal];
+    [RegisteredButton setBackgroundImage:[UIImage imageNamed:@"backGroundImg"] forState:(UIControlStateHighlighted)];
+    [RegisteredButton setTitleColor:TimeMainFont_Color forState:(UIControlStateHighlighted)];
+    [RegisteredButton setTitleColor:YZEssentialColor forState:UIControlStateNormal];
+    RegisteredButton.titleLabel.font = FONT(15);
+    RegisteredButton.layer.cornerRadius = 22.0;
+    RegisteredButton.layer.masksToBounds = YES;
+    [RegisteredButton.layer setBorderWidth:1.0]; // 边框宽度
+    // 边框颜色
+    RegisteredButton.layer.borderColor=YZEssentialColor.CGColor;
+    RegisteredButton.backgroundColor = WhiteColor;
+    [RegisteredButton addTarget:self action:@selector(handleRegisteredButton) forControlEvents:UIControlEventTouchUpInside];
+    [BackView addSubview:RegisteredButton];
+    
+    // 分割线
+    self.OneView = [UIView new];
+    _OneView.backgroundColor = MainLine_Color;
+    self.TwoView = [UIView new];
+    _TwoView.backgroundColor = MainLine_Color;
+    UIView *ThereView = [UIView new];
+    ThereView.backgroundColor = MainLine_Color;
+    UIView *FourView = [UIView new];
+    FourView.backgroundColor = MainLine_Color;
+    
+    UIView *leftView = [UIView new];
+    leftView.backgroundColor = YZEssentialColor;
+    
+//    leftView.frame = CGRectMake(100*YZAdapter, 297.5*YZAdapter, 1*YZAdapter, 90*YZAdapter);
+    UIView *TopView = [UIView new];
+    TopView.frame = CGRectMake(15*YZAdapter, 297.5*YZAdapter, Screen_W-30*YZAdapter, 1*YZAdapter);
+    UIView *BottomView = [UIView new];
+    BottomView.frame = CGRectMake(15*YZAdapter, 387.5*YZAdapter, Screen_W-30*YZAdapter, 1*YZAdapter);
+    UIView *RightView = [UIView new];
+    RightView.frame = CGRectMake(Screen_W-15*YZAdapter, 297.5*YZAdapter, 1*YZAdapter, 90*YZAdapter);
+    UIView *ZView = [UIView new];
+    ZView.frame = CGRectMake(60*YZAdapter, 297.5*YZAdapter, 1*YZAdapter, 90*YZAdapter);
+    
+    [BackView addSubview:_OneView];
+    [BackView addSubview:_TwoView];
+    [BackView addSubview:ThereView];
+    [BackView addSubview:FourView];
+    
+    [BackView addSubview:leftView];
+    [BackView addSubview:TopView];
+    [BackView addSubview:BottomView];
+    [BackView addSubview:RightView];
+    [BackView addSubview:ZView];
+    
+    BackView.sd_layout
+    .topSpaceToView(self.view, 0)
+    .leftSpaceToView(self.view, 0*YZAdapter)
+    .widthIs(Screen_W)
+    .heightIs(Screen_H);
+    
+    TitleImage.sd_layout
+    .topSpaceToView(BackView, 123*YZAdapter)
+    .leftSpaceToView(BackView, 68.25*YZAdapter)
+    .widthIs(238.5*YZAdapter)
+    .heightIs(126*YZAdapter);
+    
+    
+//    PhoneImage.sd_layout
+//    .topSpaceToView(TitleImage, 74*YZAdapter)
+//    .leftSpaceToView(BackView, 32*YZAdapter)
+//    .widthIs(11*YZAdapter)
+//    .heightIs(18*YZAdapter);
+    
+    _Phone.sd_layout
+    .topSpaceToView(BackView, 300*YZAdapter)
+    .leftSpaceToView(BackView, 75*YZAdapter)
+    .widthIs(275*YZAdapter)
+    .heightIs(30*YZAdapter);
+    
+    _OneView.sd_layout
+    .topSpaceToView(BackView, (329*YZAdapter))
+    .leftSpaceToView(BackView, 22*YZAdapter)
+    .widthIs(Screen_W-44*YZAdapter)
+    .heightIs(1*YZAdapter);
+    
+//    PasswordImage.sd_layout
+//    .topSpaceToView(_OneView, 15*YZAdapter)
+//    .leftSpaceToView(BackView, 30*YZAdapter)
+//    .widthIs(15*YZAdapter)
+//    .heightIs(18*YZAdapter);
+    
+    _password.sd_layout
+    .topSpaceToView(BackView, 364*YZAdapter)
+    .leftSpaceToView(BackView, 22*YZAdapter)
+    .widthIs(303*YZAdapter)
+    .heightIs(30*YZAdapter);
+    
+    _TwoView.sd_layout
+    .topSpaceToView(_OneView, 65*YZAdapter)
+    .leftSpaceToView(BackView, 22*YZAdapter)
+    .widthIs(Screen_W-44*YZAdapter)
+    .heightIs(1*YZAdapter);
+    
+    _Start.sd_layout
+    .topSpaceToView(BackView, 372*YZAdapter)
+    .rightSpaceToView(RightView, 15*YZAdapter)
+    .widthIs(20*YZAdapter)
+    .heightIs(20*YZAdapter);
+    
+    
+//    _AgreementButton.sd_layout
+//    .topSpaceToView(BottomView, 12*YZAdapter)
+//    .leftSpaceToView(BackView, 15*YZAdapter)
+//    .widthIs(12*YZAdapter)
+//    .heightIs(12*YZAdapter);
+    
+//    FourView.sd_layout
+//    .topSpaceToView(AgreementLabel, 2*YZAdapter)
+//    .leftSpaceToView(_AgreementButton, 30*YZAdapter)
+//    .widthIs(160*YZAdapter)
+//    .heightIs(1*YZAdapter);
+    
+    ForgetButton.sd_layout
+    .topSpaceToView(BottomView, 12*YZAdapter)
+    .rightSpaceToView(RightView, 0)
+    .widthIs(60*YZAdapter)
+    .heightIs(13*YZAdapter);
+    
+    ThereView.sd_layout
+    .topSpaceToView(ForgetButton, 0.1*YZAdapter)
+    .leftEqualToView(ForgetButton)
+    .widthIs(55*YZAdapter)
+    .heightIs(1*YZAdapter);
+    
+    
+    LoginButton.sd_layout
+    .topSpaceToView(_TwoView, 59*YZAdapter)
+    .leftSpaceToView(BackView, 15*YZAdapter)
+    .widthIs(Screen_W - 30*YZAdapter)
+    .heightIs(47*YZAdapter);
+    
+    RegisteredButton.sd_layout
+    .topSpaceToView(LoginButton, 17*YZAdapter)
+    .leftEqualToView(LoginButton)
+    .widthIs(Screen_W - 30*YZAdapter)
+    .heightIs(47*YZAdapter);
+    
+    AgreementLabel.sd_layout
+    .topSpaceToView(RegisteredButton, 20*YZAdapter)
+    .leftSpaceToView(BackView, 15*YZAdapter)
+    .widthIs(Screen_W-30*YZAdapter)
+    .heightIs(12*YZAdapter);
+    
+    leftView.sd_layout
+    .topSpaceToView(AgreementLabel, 0*YZAdapter)
+    .leftSpaceToView(BackView, 100*YZAdapter)
+    .widthIs(125*YZAdapter)
+    .heightIs(1*YZAdapter);
+    
+    
+}
+
+/**
+ *  取消输入
+ */
+#pragma mark 键盘出现
+-(void)keyboardWillShow:(NSNotification *)note
+{
+    if (Screen_W == 414.0) {
+        self.view.frame = CGRectMake(0, 0-91*YZAdapter, Screen_W,Screen_H);
+    }else {
+        self.view.frame = CGRectMake(0, 0-102*YZAdapter, Screen_W,Screen_H);
+    }
+}
+#pragma mark 键盘消失
+-(void)keyboardWillHide:(NSNotification *)note
+{
+    self.view.frame = CGRectMake(0, 0, Screen_W, Screen_H);
+}
+
+
+#pragma mark - 开启密码显示
+- (void)handleStart {
+    // 显示明码
+    if (!_IDpassword) {
+        _password.secureTextEntry = NO;
+        [_Start setImage:[UIImage imageNamed:@"Openeyes"] forState:UIControlStateNormal];
+        _IDpassword = YES;
+    }else {
+        _password.secureTextEntry = YES;
+        [_Start setImage:[UIImage imageNamed:@"Close-your-eyes"] forState:UIControlStateNormal];
+        _IDpassword = NO;
+    }
+}
+
+
+#pragma mark - 忘记密码
+- (void) handleForgetButton {
+
+    [self.Phone resignFirstResponder];
+    [self.password resignFirstResponder];
+    
+    YZForgetPasswordViewController *YZForgetPasswordController = [YZForgetPasswordViewController new];
+    YZForgetPasswordController.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:YZForgetPasswordController animated:YES];
+}
+
+#pragma mark - 登录
+- (void)handleLoginButton {
+    
+    if (![YZUtil isBlankString:self.Phone.text] && ![YZUtil isBlankString:self.password.text] && [YZUtil isMobileNumber:self.Phone.text] && _IDAgreement) {
+        LKWaitBubble(@"正在登录");
+        
+        YZALLService *LoginRequest = [YZALLService zwb_requestWithUrl:USER_LOGIN_URL isPost:YES];
+        
+        LoginRequest.telphone = [self.Phone.text noWhiteSpaceString];
+        LoginRequest.password = [self.password.text noWhiteSpaceString];
+        LoginRequest.deviceid = [[UIDevice currentDevice].identifierForVendor UUIDString];
+        
+        WeakSelf(self);
+        
+        [LoginRequest zwb_sendRequestWithCompletion:^(id responseObject, BOOL success, NSString *message) {
+            DLog(@"%@", message);
+            if (success) {
+                DLog(@"return success:%@", responseObject);
+                NSString * code = responseObject[@"code"];
+                if ([code integerValue] == 0) {
+                    
+                    [MBProgressHUD hideHUDForView:nil];
+                    
+                    NSDictionary *customer = responseObject[@"data"];
+                    NSMutableDictionary *mResponse = [NSMutableDictionary dictionary];
+                    NSArray *keyValue = [customer allKeys];
+                    for (NSInteger i = 0; i < keyValue.count; i++) {
+                        NSString *key = keyValue[i];
+                        if (kObjectIsEmpty(customer[key]))
+                            [mResponse setObject:@"" forKey:key];
+                        else
+                            [mResponse setObject:customer[key] forKey:key];
+                    }
+                    
+                    [mResponse setObject:self.Phone.text forKey:@"Usre_Phone"];
+                    
+                    [[YZUserInfoManager sharedManager] didLoginInWithUserInfo:mResponse];
+                    
+                    YZUserInfoModel *NewModel = [[YZUserInfoManager sharedManager] currentUserInfo];
+                    NewModel.face_url = mResponse[@"face"];
+                    NewModel.face_min_url = mResponse[@"face_min"];
+                    NewModel.face = [self getImageFromURL:mResponse[@"face"]];
+                    NewModel.face_min = [self getImageFromURL:mResponse[@"face_min"]];
+                    [[YZUserInfoManager sharedManager] resetUserInfoWithUserInfo:NewModel];
+                    
+                    self.Aline = mResponse[@"pushid"];
+                    
+                    [JPUSHService setTags:nil alias:mResponse[@"pushid"] fetchCompletionHandle:^(int iResCode, NSSet *iTags, NSString *iAlias){
+                        DLog(@"rescode: %d, \ntags: %@, \nalias: %@\n", iResCode, iTags, iAlias);
+                        if (iResCode != 0) {
+                            [self AlinePush];
+                        }
+                    }];
+                    
+                    if (weakSelf.delegate && [weakSelf respondsToSelector:@selector(changeViewRootController:)]) {
+                        [weakSelf.delegate changeViewRootController:self];
+                    }else{
+                        [weakSelf postMessage:@"退出后登录"];
+                    }
+                    
+                    LKRightBubble(@"登录成功", 1);
+                    
+                }else if ([code integerValue] == 101002 || [code integerValue] == 101001) {
+                    LKHideBubble();
+                    [MBProgressHUD showMessage:@"账号或密码错误" ToView:nil RemainTime:1];
+//                    [MBProgressHUD showAutoMessage:@"账号或密码错误"];
+//                    LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"账号或密码错误" BubbleImage:@"YZPromptSubmit"], 1);
+                }
+            } else {
+                DLog(@"return failure");
+                LKHideBubble();
+                [MBProgressHUD showAutoMessage:@"登录失败, 请检查您的网络连接"];
+//                LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"登录失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+            }
+        } failure:^(NSError *error) {
+            DLog(@"error == %@", error);
+            LKHideBubble();
+            [MBProgressHUD showAutoMessage:@"登录失败, 请检查您的网络连接"];
+//            LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"登录失败, 请检查您的网络连接" BubbleImage:@"YZPromptSubmit"], 1);
+        }];
+
+    }else if ([YZUtil isBlankString:self.Phone.text] || [YZUtil isBlankString:self.password.text] || ![YZUtil isMobileNumber:self.Phone.text]){
+        LKHideBubble();
+        [MBProgressHUD showAutoMessage:@"账号或密码错误"];
+    } else if (!_IDAgreement) {
+        [MBProgressHUD showAutoMessage:@"请认真查看协议"];
+//        LKShowBubbleInfoWithTime([YZBubbleInfo StartBubbleTitle:@"账号或密码错误" BubbleImage:@"YZPromptSubmit"], 1);
+    }
+    
+}
+
+-(UIImage *) getImageFromURL:(NSString *)fileURL {
+    
+    NSLog(@"执行图片下载函数");
+    UIImage * result;
+    NSData * data = [NSData dataWithContentsOfURL:[NSURL URLWithString:fileURL]];
+    result = [UIImage imageWithData:data];
+    return result;
+}
+
+
+- (void)AlinePush {
+    [JPUSHService setTags:nil alias:self.Aline fetchCompletionHandle:^(int iResCode, NSSet *iTags, NSString *iAlias){
+        DLog(@"rescode: %d, \ntags: %@, \nalias: %@\n", iResCode, iTags, iAlias);
+        if (iResCode != 0) {
+            [self AlinePush];
+        }
+    }];
+}
+
+
+//- (void)hidenMessageLabel:(UILabel *)label
+//{
+//    label.hidden = YES;
+//}
+/**
+ *  当退出后重新登录时，发送通知
+ *
+ *  @param returnFlage 通知消息
+ */
+-(void)postMessage:(NSString *)returnFlage {
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"isLogOutSuccess" object:returnFlage];
+    
+}
+#pragma mark - 同意协议
+//- (void)handleAgreementButton {
+//    
+//    // 同意协议
+//    if (_IDAgreement) {
+//        [_AgreementButton setImage:[UIImage imageNamed:@"noagree"] forState:UIControlStateNormal];
+//        _IDAgreement = NO;
+//    }else {
+//        [_AgreementButton setImage:[UIImage imageNamed:@"确定"] forState:UIControlStateNormal];
+//        _IDAgreement = YES;
+//    }
+//}
+
+#pragma mark - 注册
+- (void)handleRegisteredButton {
+//    LKWaitBubble(@"跳转中...");
+    [self.Phone resignFirstResponder];
+    [self.password resignFirstResponder];
+    
+    RegisterViewController * vc = [[RegisterViewController alloc]init];
+//    [self presentViewController:vc animated:YES completion:nil];
+    vc.ORLogin = @"Login";
+    vc.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:vc animated:NO];
+}
+
+#pragma mark - 轻拍手势方法 点击协议
+- (void)handleTapGesture:(UITapGestureRecognizer *)tapGesture {
+//    LKWaitBubble(@"跳转中...");
+    [self.Phone resignFirstResponder];
+    [self.password resignFirstResponder];
+    
+    YZAgreementViewController * YZAgreementController = [[YZAgreementViewController alloc]init];
+    YZAgreementController.hidesBottomBarWhenPushed = YES;
+    [self.navigationController pushViewController:YZAgreementController animated:NO];
+}
+
+
+#pragma mark - Action
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [super touchesBegan:touches withEvent:event];
+    
+    _TwoView.backgroundColor = MainLine_Color;
+    _OneView.backgroundColor = MainLine_Color;
+    
+    [self.Phone resignFirstResponder];
+    [self.password resignFirstResponder];
+    
+}
+
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    return UIStatusBarStyleLightContent;
+    //    return UIStatusBarStyleDefault;  //默认的值是黑色的
+}
+
+-(void)textFieldDidBeginEditing:(UITextField *)textField {
+    
+    if (textField == _Phone) {
+        _OneView.backgroundColor = YZEssentialColor;
+        _TwoView.backgroundColor = MainLine_Color;
+    }
+    
+    if (textField == _password) {
+        _OneView.backgroundColor = MainLine_Color;
+        _TwoView.backgroundColor = YZEssentialColor;
+    }
+    
+}
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+- (void)dealloc
+{
+
+}
+@end

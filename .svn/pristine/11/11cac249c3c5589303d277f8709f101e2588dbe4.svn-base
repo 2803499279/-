@@ -1,0 +1,26 @@
+//
+//  HomeTableViewCell.h
+//  JBHProject
+//
+//  Created by 李俊恒 on 2017/4/10.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "YZOrderModel.h"
+@class HomeTableViewCell;
+@protocol HomeTableViewCellDelegate <NSObject>
+/**
+ *  @Description item选中跳转对应的控制器
+ *  @sender 点击的立即抢单按钮
+ */
+- (void)didSelectedHomeTableViewcell:(HomeTableViewCell *)cell;
+@end
+
+@interface HomeTableViewCell : UITableViewCell
+@property(nonatomic,strong)YZOrderModel * cellModel;
+@property(nonatomic,assign)BOOL isAddHeight;
+@property(nonatomic,strong)UIButton * immediatelyBtn;// 立即抢单
++ (CGFloat)HomeCellHeightWithModel:(YZOrderModel *)model;
+@property(nonatomic,weak)id<HomeTableViewCellDelegate> homeTableViewCellDelegate;
+@end

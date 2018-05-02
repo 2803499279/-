@@ -1,0 +1,108 @@
+//
+//  JBHPublicHeader.pch
+//  JBHProject
+//
+//  Created by 李俊恒 on 2017/4/10.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#ifndef JBHPublicHeader_pch
+#define JBHPublicHeader_pch
+/*************************** public header file*************************/
+#import <UIKit/UIKit.h>
+/**********************三方依赖库*************************/
+#import "Masonry.h"
+#import "AFNetworking.h"
+#import <AFNetworking/AFNetworking.h>
+#import <SDWebImage/UIImageView+WebCache.h>
+#import <MJRefresh/MJRefresh.h>
+#import <AMapFoundationKit/AMapFoundationKit.h>
+#import <AMapSearchKit/AMapSearchKit.h>
+#import <MAMapKit/MAMapKit.h>
+#import <AMapLocationKit/AMapLocationManager.h>
+#import <AMapNaviKit/AMapNaviKit.h>
+#import <SDAutoLayout.h>
+#import "MBProgressHUD.h"
+#import "MBProgressHUD+YZExpand.h"
+// iOS 10 notification
+#import <UserNotifications/UserNotifications.h>
+#import <UMSocialCore/UMSocialCore.h>
+#import "YZBubble.h"
+#import <MJExtension/MJExtension.h>
+#import "YZCommonConstant.h"
+#import "YZALLService.h"
+
+/***************** 策划抽屉********************************/
+//#import "DEMOMenuViewController.h"
+//#import "REFrostedViewController.h"
+//#import "UIViewController+REFrostedViewController.h"
+#import "ListeningList.h"
+#import "HomeNetWorking.h"
+// *************极光统计*********
+// 引入JAnalytics功能所需头文件
+#import "JANALYTICSService.h"
+/**********************自定义的常用宏*************************/
+#define JHtabBar_H 49 //tabbar的高度
+#define  Screen_W [UIScreen mainScreen].bounds.size.width
+#define  Screen_H [UIScreen mainScreen].bounds.size.height
+#define iPhone5 ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(640, 1136), [[UIScreen mainScreen] currentMode].size) : NO)
+#define  Size_ratio Screen_W/414 //(iPhone 6s plus基准尺寸)
+#define LJHColor(r,g,b) [UIColor colorWithRed:r/255.0 green:g/255.0 blue:b/255.0 alpha:1.0]
+//#define MAPKEY @"9b6855223643ceb97a4f8990e1a0bd21"// 正式发布
+#define MAPKEY @"72f7eb3ef34c690aba2189d81e3acbb6"// 测试
+/***********************打印********************/
+#define Log(content) NSLog(@"",content)
+/*********************** Tools *****************************************/
+#import "YZOrderModel.h"
+#import "YZNetRequestUrl.h"
+#import "YZMacros.h"
+#import "YZPublic.h"
+#import "DataNullCheckTool.h"
+#import "UIColor+JHColor.h"
+#import "JHTools.h"
+#import "NSString+YZAddition.h"
+#import "NSObject+AutoCoding.h"
+#import "YZUserInfoModel.h"
+#import "YZUserInfoManager.h"
+#import "YZPhotoSingleton.h"
+#import "YZUtil.h"
+#import "YZAlertViewController.h"
+#import "YZPromptViewController.h"
+#import "YZLoginViewController.h"
+#import "YZPushModel.h"
+#import "YZRichURLProtocol.h"
+// 引入JPush功能所需头文件
+#import "JPUSHService.h"
+#import "YZDataBase.h"
+// Include any system framework and library headers here that should be included in all compilation units.
+// You will also need to set the Prefix Header build setting of one or more of your targets to reference this file.
+
+#define JHHostName @"api-nat.juins.com"// 测试
+#define JHbaseUrl @"https://api-nat.juins.com/v1/"// 测试
+
+//api-nat.juins.com
+//#define JHHostName @"api.juins.com"// 发布
+//#define JHbaseUrl @"https://api.juins.com/v1/"// 发布环境服务器
+
+/**********************YZ第三方平台的APPKey*************************/
+#define UM_APPKEY @"58f02b932ae85b38240028bb"
+
+/**********************DNS*************************/
+#import <resolv.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+
+#ifdef DEBUG
+#define DLog(...) NSLog(__VA_ARGS__)
+#else
+#define DLog(...)
+/* */
+#endif
+#define ALog(...) NSLog(__VA_ARGS__)
+
+
+#endif /* JBHPublicHeader_pch */

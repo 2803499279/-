@@ -1,0 +1,207 @@
+//
+//  JHCompletedViewController.m
+//  JBHProject
+//
+//  Created by 李俊恒 on 2017/4/28.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "JHCompletedViewController.h"
+#import "CompletedTableViewCell.h"
+#import "CompeletedModel.h"
+@interface JHCompletedViewController ()<UITableViewDelegate,UITableViewDataSource>
+@property(nonatomic,strong)UITableView * completeTableView;
+@property(nonatomic,strong)NSMutableArray * dataSources;
+@end
+
+@implementation JHCompletedViewController
+static NSInteger tempPage = 1;
+- (instancetype)init
+{
+    if(self=[super init]){
+        _dataSources = [NSMutableArray array];
+    }
+    return self;
+}
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden = NO;
+    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+    self.tabBarController.tabBar.hidden = NO;
+
+}
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self netRequestFinishedList];
+    [self refreshNewData];
+    [self customPushViewControllerNavBarTitle:@"已完成派单" backGroundImageName:nil];
+    [self.view addSubview:self.completeTableView];
+    
+    [self customerGesturePop];
+}
+#pragma mark - Private Method 右划返回上一个页面
+- (void)customerGesturePop {
+
+    UISwipeGestureRecognizer *swipeGestuer2 = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(handleOtherSwipeGesture)];
+    swipeGestuer2.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:swipeGestuer2];
+    
+
+}
+- (void) handleOtherSwipeGesture {
+//    [self.navigationController popViewControllerAnimated:YES];
+    
+    [self.view endEditing:YES];
+    [super goBack];
+//    [self.frostedViewController.view endEditing:YES];
+//    // Present the view controller
+//    [self.frostedViewController presentMenuViewController];
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+}
+- (UITableView *)completeTableView
+{
+    if (_completeTableView == nil) {
+        _completeTableView = [[UITableView alloc]initWithFrame:CGRectMake(0,0, Screen_W, Screen_H) style:UITableViewStyleGrouped];
+        _completeTableView.delegate = self;
+        _completeTableView.dataSource = self;
+        _completeTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+        [_completeTableView registerClass:[CompletedTableViewCell class] forCellReuseIdentifier:@"CellID"];
+        _completeTableView.backgroundColor = [UIColor groupTableViewBackgroundColor];
+        [_completeTableView setTableFooterView:[[UIView alloc] initWithFrame:CGRectZero]];
+        _completeTableView.separatorInset = UIEdgeInsetsMake(0, 0, 0, Screen_W - 145*YZAdapter);
+    }
+    return _completeTableView;
+}
+#pragma mark =========== delegate
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return 1;
+}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+       return self.dataSources.count;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+ 
+  // 数据刷新后加载抢单页面
+    CompletedTableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:@"CellID"];
+    if (cell == nil) {
+        cell = [[CompletedTableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"CellID"];
+    }
+//    if (indexPath.row == 0) {
+//        cell.isFrist = YES;
+//    }
+    cell.cellModel = self.dataSources[indexPath.row];
+    cell.selectionStyle = UITableViewCellSeparatorStyleNone;
+    return cell;
+    
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    
+    CompeletedModel * model ;
+    if (self.dataSources.count != 0 && self.dataSources!=nil) {
+        model = self.dataSources[indexPath.row];
+    }
+    
+    return [CompletedTableViewCell HomeCellHeightWithModel:model];
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
+{
+        if (section == 0) {
+            return 20*YZAdapter;
+        }
+    return 0;
+}
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    return 0;
+}
+#pragma mark -------- netRequest
+- (HomeNetWorking *)manager
+{
+    if (_manager == nil) {
+        _manager = [HomeNetWorking sharedInstance];
+    }
+    return _manager;
+}
+
+- (void)netRequestFinishedList
+{
+    NSMutableDictionary * dict = [NSMutableDictionary dictionary];
+    NSString * url = @"task/finished";
+    dict[@"page"] = @"0";
+    [self.manager requestCompleteTaskPOSTWithURl:url Dictionary:dict Succes:^(id responsData) {
+        DLog(@"已完成派单%@",responsData);
+        DLog(@"");
+         self.dataSources = [CompeletedModel parseRespondsData:responsData];
+        [self.completeTableView reloadData];
+
+    } failed:^(NSError *error){
+        DLog(@"%@",error);
+    }];
+    
+}
+- (void)featchData:(NSInteger)tempPage1
+{
+    NSString * url = @"task/finished";
+    NSMutableDictionary * params = [NSMutableDictionary dictionary];
+    params[@"page"] = [NSString stringWithFormat:@"%ld",tempPage1];
+    [self.manager requestCompleteTaskPOSTWithURl:url Dictionary:params Succes:^(id responsData) {
+        DLog(@"已完成派单%@",responsData);
+        // 请求成功结束刷新
+        [self.completeTableView.mj_header endRefreshing];
+        [self.completeTableView.mj_footer endRefreshing];
+        if (tempPage == 0) {
+            [self.dataSources removeAllObjects];
+            self.dataSources = [CompeletedModel parseRespondsData:responsData];
+        }else if ([CompeletedModel parseRespondsData:responsData] != nil)
+        {
+            [self.dataSources addObjectsFromArray:[CompeletedModel parseRespondsData:responsData]];
+        }
+        [self.completeTableView reloadData];
+        
+    } failed:^(NSError *error){
+        [self.completeTableView.mj_header endRefreshing];
+        [self.completeTableView.mj_footer endRefreshing];
+        DLog(@"请求失败%@",error);
+    }];
+}
+
+- (void)refreshNewData
+{
+    __weak typeof(self) weakSelf = self;
+    self.completeTableView.mj_header= [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+        tempPage--;
+        if (tempPage <= 0) {
+            tempPage = 0;
+        }
+        [weakSelf featchData:tempPage];
+        
+        
+    }];
+    [self.completeTableView.mj_header beginRefreshing];
+    // 设置自动切换透明度(在导航栏下面自动隐藏)
+    self.completeTableView.mj_header.automaticallyChangeAlpha = YES;
+    
+    // 上拉刷新
+    self.completeTableView.mj_footer = [MJRefreshBackNormalFooter footerWithRefreshingBlock:^{
+        
+        tempPage++;
+        [weakSelf featchData:tempPage];
+        
+        
+    }];
+}
+
+@end

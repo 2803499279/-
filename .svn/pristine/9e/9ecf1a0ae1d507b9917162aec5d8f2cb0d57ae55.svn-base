@@ -1,0 +1,201 @@
+//
+//  YZBankViewController.m
+//  JBHProject
+//
+//  Created by zyz on 2017/5/6.
+//  Copyright © 2017年 聚宝汇. All rights reserved.
+//
+
+#import "YZBankViewController.h"
+#import "YZBankViewCell.h"
+
+@interface YZBankViewController () <UITableViewDataSource, UITableViewDelegate>
+
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) NSMutableArray *imageArray;
+@property (nonatomic, strong) NSArray *nameArray;
+@property (nonatomic, strong) NSMutableDictionary *BankDic;
+
+@end
+
+@implementation YZBankViewController
+
+
+- (NSMutableDictionary *)BankDic {
+    if (!_BankDic) {
+        _BankDic = [[NSMutableDictionary alloc] init];
+    }
+    return _BankDic;
+}
+
+- (NSArray *)nameArray {
+    if (!_nameArray) {
+        _nameArray = [[NSArray alloc] init];
+    }
+    return _nameArray;
+}
+- (NSMutableArray *)imageArray {
+    if (!_imageArray) {
+        _imageArray = [[NSMutableArray alloc] init];
+    }
+    return _imageArray;
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+//    self.tabBarController.tabBar.hidden = YES;
+}
+- (void)viewWillDisappear:(BOOL)animated
+{
+    [super viewWillDisappear:animated];
+//    self.tabBarController.tabBar.hidden = NO;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    
+    self.view.backgroundColor = BackGround_Color;
+    // 设置导航栏
+    [self customPushViewControllerNavBarTitle:@"所属银行卡" backGroundImageName:nil];
+    
+    // 创建UITableView,注册cell
+    [self establishUITableViewAndCell];
+    
+    // 银行键值对字典
+    _BankDic = [[NSMutableDictionary alloc] initWithCapacity:0];
+    [_BankDic setObject:@"youzheng" forKey:@"邮储银行"];
+    [_BankDic setObject:@"minsheng_s" forKey:@"民生银行"];
+    [_BankDic setObject:@"pingan_s" forKey:@"平安银行"];
+    [_BankDic setObject:@"zhongguo" forKey:@"中国银行"];
+    [_BankDic setObject:@"jianshe" forKey:@"建设银行"];
+    [_BankDic setObject:@"guangda_s" forKey:@"光大银行"];
+    [_BankDic setObject:@"huaxia" forKey:@"华夏银行"];
+    [_BankDic setObject:@"pufa" forKey:@"浦发银行"];
+    [_BankDic setObject:@"nongye" forKey:@"农业银行"];
+    [_BankDic setObject:@"gongshang_s" forKey:@"工商银行"];
+    [_BankDic setObject:@"xingye" forKey:@"兴业银行"];
+    [_BankDic setObject:@"jiaotong" forKey:@"交通银行"];
+    [_BankDic setObject:@"beijing" forKey:@"北京银行"];
+    [_BankDic setObject:@"shanghai" forKey:@"上海银行"];
+    [_BankDic setObject:@"zhongxin" forKey:@"中信银行"];
+    [_BankDic setObject:@"guangfa" forKey:@"广发银行"];
+    [_BankDic setObject:@"zhaoshang" forKey:@"招商银行"];
+    
+    
+    // 获取支付银行字典
+    NSString *dicPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"dictionary.txt"];
+    NSDictionary *readDic = [NSDictionary dictionaryWithContentsOfFile:dicPath];
+    DLog(@"--------------------------%@", readDic);
+    
+    self.nameArray = readDic.allValues;
+    
+    for (NSString *key in self.nameArray) {
+        // 根据key值将字典中的value值取出来
+        NSString *value = [_BankDic objectForKey:key];
+        if (![YZUtil isBlankString:value]) {
+            [self.imageArray addObject:value];
+        }
+    }
+    
+}
+
+#pragma marh - 创建UITableView,注册cell
+- (void)establishUITableViewAndCell {
+    // 创建UITableView
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 1*YZAdapter, Screen_W, Screen_H-64) style:(UITableViewStylePlain)];
+    
+    // 注册cell
+    [self.tableView registerClass:[YZBankViewCell class] forCellReuseIdentifier:@"YZBankViewCell"];
+    
+    self.tableView.backgroundColor = BackGround_Color;
+//    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+//    self.tableView.bounces = NO;
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    
+    [self.view addSubview:self.tableView];
+}
+
+
+// 去掉cell左侧空白
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath{
+    if ([cell respondsToSelector:@selector(setSeparatorInset:)]) {
+        [cell setSeparatorInset:UIEdgeInsetsZero];
+    }
+    if ([cell respondsToSelector:@selector(setLayoutMargins:)]) {
+        [cell setLayoutMargins:UIEdgeInsetsZero];
+    }
+}
+
+#pragma mark - UITableViewDataSource代理方法
+// 返回tabelView中section(分区)的个数
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+// 返回每个分区中cell的个数
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.nameArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    YZBankViewCell *YZBankCell = [tableView dequeueReusableCellWithIdentifier:@"YZBankViewCell" forIndexPath:indexPath];
+    
+    if (self.imageArray.count != 0) {
+        YZBankCell.bankImage.image = [UIImage imageNamed:self.imageArray[indexPath.row]];
+        
+        YZBankCell.bankLabel.text = self.nameArray[indexPath.row];
+    }
+        
+    return YZBankCell;
+}
+
+// 返回cell的高度
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 43*YZAdapter;
+}
+
+//- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+//    return 10*YZAdapter;
+//}
+
+// 点击cell触发的方法
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    if (self.imageArray.count != 0) {
+        NSString *baimage = self.imageArray[indexPath.row];
+        
+        [_delegate bankImage:baimage bankLabel:self.nameArray[indexPath.row]];
+    }
+    
+//    [self.navigationController popViewControllerAnimated:YES];
+    [super goBack];
+}
+
+
+// 返回上一个页面
+-(void)handleBackButton:(UIButton *)sender {
+//    [self.navigationController popViewControllerAnimated:YES];
+    [super goBack];
+}
+
+
+
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+#pragma mark - Navigation
+
+// In a storyboard-based application, you will often want to do a little preparation before navigation
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    // Get the new view controller using [segue destinationViewController].
+    // Pass the selected object to the new view controller.
+}
+*/
+
+@end
